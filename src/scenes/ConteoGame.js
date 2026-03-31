@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { AudioManager } from '../utils/AudioManager';
+import { AudioManager } from '../utils/AudioManager.js';
 
 export class ConteoGame extends Phaser.Scene {
     constructor() {
