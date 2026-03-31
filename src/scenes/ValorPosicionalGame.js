@@ -1,5 +1,5 @@
 import Phaser from 'https://esm.run/phaser';
-import { AudioManager } from '../utils/AudioManager';
+import { AudioManager } from '../utils/AudioManager.js';
 
 export class ValorPosicionalGame extends Phaser.Scene {
     constructor() {
