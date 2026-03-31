@@ -4,43 +4,51 @@ import { AudioManager } from '../utils/AudioManager.js';
 export class ConteoGame extends Phaser.Scene {
     constructor() {
         super('ConteoGame');
+    }
+
+    init() {
         this.paso = 2; 
         this.numeroActual = 0;
         this.objetivo = 20;
         this.estado = 'EXPLICACION'; 
+        this.botonesUI = []; // Array simple en lugar de Contenedor
     }
 
     create() {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this);
 
-        // Reset de variables al iniciar la escena
-        this.numeroActual = 0;
-
-        // 1. Fondo (con scroll lento para efecto Parallax)
+        // 1. Fondo
         this.add.image(width / 2, height / 2, 'sky').setScrollFactor(0.1).setAlpha(0.6);
         
-        // 2. Grupo de plataformas con colisión
+        // 2. BOTÓN VOLVER (Esquina superior izquierda, fijo en pantalla)
+        const btnVolver = this.add.container(70, 40).setDepth(1000).setScrollFactor(0);
+        const bgVolver = this.add.rectangle(0, 0, 110, 40, 0xe74c3c).setInteractive();
+        const txtVolver = this.add.text(0, 0, '← VOLVER', { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
+        btnVolver.add([bgVolver, txtVolver]);
+        bgVolver.on('pointerdown', () => this.scene.start('MainMenu'));
+
+        // 3. Grupo de plataformas con colisión
         this.plataformas = this.physics.add.staticGroup();
 
-        // 3. Personaje
+        // 4. Personaje
         this.player = this.physics.add.sprite(100, height - 150, 'dude');
         this.player.setBounce(0.1);
-        this.player.setCollideWorldBounds(false); // Falso para que pueda avanzar libremente
+        this.player.setCollideWorldBounds(false);
 
-        // 4. Colisionador permanente
+        // 5. Colisionador permanente
         this.physics.add.collider(this.player, this.plataformas);
 
-        // 5. UI
+        // 6. UI Principal (Fija en pantalla)
         this.uiTexto = this.add.text(width / 2, 80, '¡Mira cómo cuento de 2 en 2!', {
             fontSize: '32px',
             fill: '#fff',
             backgroundColor: '#000000aa',
             padding: { x: 20, y: 10 },
             align: 'center'
-        }).setOrigin(0.5).setScrollFactor(0).setDepth(10);
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
 
-        this.setupControlesPráctica();
+        this.setupControlesPractica();
         this.iniciarExplicacion();
     }
 
@@ -83,34 +91,49 @@ export class ConteoGame extends Phaser.Scene {
         return plat;
     }
 
-    setupControlesPráctica() {
+    setupControlesPractica() {
         const { width, height } = this.scale;
-        this.btnGroup = this.add.container(0, 0).setVisible(false).setScrollFactor(0).setDepth(10);
-
-        // Opciones fijas basadas en el paso actual
-        const opciones = [this.paso, this.paso + 1, 1]; // El paso correcto, uno más, o solo uno
         
-        opciones.sort(() => Math.random() - 0.5).forEach((num, i) => {
+        const opciones = [this.paso, this.paso + 1, 1]; 
+        Phaser.Utils.Array.Shuffle(opciones); // Mezclamos las opciones de forma nativa en Phaser
+        
+        opciones.forEach((num, i) => {
+            // Aplicamos setScrollFactor(0) directamente al rectángulo
             const btn = this.add.rectangle(width/2 + (i-1)*180, height - 80, 140, 90, 0x3498db, 0.8)
                 .setInteractive()
-                .setStrokeStyle(4, 0xffffff);
+                .setStrokeStyle(4, 0xffffff)
+                .setScrollFactor(0)
+                .setDepth(100)
+                .setVisible(false);
             
-            const txt = this.add.text(btn.x, btn.y, `+${num}`, { fontSize: '36px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
+            // Aplicamos setScrollFactor(0) directamente al texto
+            const txt = this.add.text(btn.x, btn.y, `+${num}`, { fontSize: '36px', fill: '#fff', fontWeight: 'bold' })
+                .setOrigin(0.5)
+                .setScrollFactor(0)
+                .setDepth(101)
+                .setVisible(false);
             
             btn.on('pointerdown', () => this.verificarSalto(num));
-            this.btnGroup.add([btn, txt]);
+            
+            // Guardamos las referencias en nuestro array simple
+            this.botonesUI.push({ btn, txt });
         });
     }
 
     iniciarPractica() {
         this.estado = 'PRACTICA';
-        this.btnGroup.setVisible(true);
+        // Mostramos los botones iterando sobre el array
+        this.botonesUI.forEach(item => {
+            item.btn.setVisible(true);
+            item.txt.setVisible(true);
+        });
     }
 
     verificarSalto(valorElegido) {
         if (this.estado !== 'PRACTICA') return;
 
         if (valorElegido === this.paso) {
+            this.estado = 'SALTANDO'; // Bloquea los botones temporalmente para evitar spam de clics
             this.audio.hablar("¡Muy bien!");
             this.numeroActual += this.paso;
             
@@ -119,12 +142,29 @@ export class ConteoGame extends Phaser.Scene {
             
             this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
 
-            // Salto del jugador al acertar
+            // Salto del jugador
             this.player.setVelocityY(-350);
             this.tweens.add({
                 targets: this.player,
                 x: nuevaX,
-                duration: 600
+                duration: 600,
+                onComplete: () => {
+                    // Verificar si llegó al objetivo final (20)
+                    if (this.numeroActual >= this.objetivo) {
+                        this.uiTexto.setText('¡LO LOGRASTE!');
+                        this.audio.hablar("¡Excelente! Has llegado a la meta.");
+                        
+                        // Ocultar botones
+                        this.botonesUI.forEach(item => { item.btn.setVisible(false); item.txt.setVisible(false); });
+                        this.cameras.main.flash(500, 46, 204, 113); // Flash verde de victoria
+                        
+                        // Regresar al menú tras ganar
+                        this.time.delayedCall(2500, () => this.scene.start('MainMenu'));
+                    } else {
+                        // Si no ha llegado a 20, permitir jugar de nuevo
+                        this.estado = 'PRACTICA';
+                    }
+                }
             });
 
         } else {
@@ -138,7 +178,7 @@ export class ConteoGame extends Phaser.Scene {
         const targetX = this.player.x - 250;
         this.cameras.main.scrollX = Phaser.Math.Linear(this.cameras.main.scrollX, targetX, 0.05);
 
-        // Si el niño se cae de la plataforma (Fail safe)
+        // Prevención de caídas
         if (this.player.y > this.scale.height) {
             this.player.setPosition(this.player.x - 180, this.scale.height - 250);
             this.player.setVelocity(0);
