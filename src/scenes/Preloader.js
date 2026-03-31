@@ -1,4 +1,4 @@
-import Phaser from 'https://esm.run/phaser';
+import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.esm.js';
 
 export class Preloader extends Phaser.Scene {
     constructor() {
