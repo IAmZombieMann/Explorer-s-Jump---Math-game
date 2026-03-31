@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser from 'https://esm.run/phaser';
 
 export class MainMenu extends Phaser.Scene {
     constructor() {
