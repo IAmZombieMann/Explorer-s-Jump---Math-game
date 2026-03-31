@@ -4,7 +4,7 @@ import Phaser from 'https://esm.run/phaser';
 import { Preloader } from './scenes/Preloader.js';
 import { MainMenu } from './scenes/MainMenu.js';
 import { ConteoGame } from './scenes/ConteoGame.js';
-import { ValorPosicionalGame } from './src/scenes/ValorPosicionalGame.js';
+import { ValorPosicionalGame } from './scenes/ValorPosicionalGame.js';
 
 /**
  * Configuración central del motor Phaser 3
