@@ -11,21 +11,27 @@ export class ConteoGame extends Phaser.Scene {
         this.numeroActual = 0;
         this.objetivo = 20;
         this.estado = 'EXPLICACION'; 
-        this.botonesUI = []; // Array simple en lugar de Contenedor
+        this.botonesUI = []; 
     }
 
     create() {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this);
 
-        // 1. Fondo
+        // 1. Fondo (con scroll lento para efecto Parallax)
         this.add.image(width / 2, height / 2, 'sky').setScrollFactor(0.1).setAlpha(0.6);
         
-        // 2. BOTÓN VOLVER (Esquina superior izquierda, fijo en pantalla)
-        const btnVolver = this.add.container(70, 40).setDepth(1000).setScrollFactor(0);
-        const bgVolver = this.add.rectangle(0, 0, 110, 40, 0xe74c3c).setInteractive();
-        const txtVolver = this.add.text(0, 0, '← VOLVER', { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
-        btnVolver.add([bgVolver, txtVolver]);
+        // 2. BOTÓN VOLVER (Sin contenedor, fijado a la cámara primero)
+        const bgVolver = this.add.rectangle(70, 40, 110, 40, 0xe74c3c)
+            .setDepth(1000)
+            .setScrollFactor(0) // IMPORTANTE: Primero se fija a la pantalla
+            .setInteractive({ useHandCursor: true }); // Luego se hace interactivo
+            
+        const txtVolver = this.add.text(70, 40, '← VOLVER', { fontSize: '16px', fill: '#fff', fontWeight: 'bold' })
+            .setOrigin(0.5)
+            .setDepth(1001)
+            .setScrollFactor(0);
+
         bgVolver.on('pointerdown', () => this.scene.start('MainMenu'));
 
         // 3. Grupo de plataformas con colisión
@@ -34,7 +40,7 @@ export class ConteoGame extends Phaser.Scene {
         // 4. Personaje
         this.player = this.physics.add.sprite(100, height - 150, 'dude');
         this.player.setBounce(0.1);
-        this.player.setCollideWorldBounds(false);
+        this.player.setCollideWorldBounds(false); // Falso para que pueda avanzar libremente
 
         // 5. Colisionador permanente
         this.physics.add.collider(this.player, this.plataformas);
@@ -60,7 +66,9 @@ export class ConteoGame extends Phaser.Scene {
     mostrarSiguienteSalto() {
         if (this.numeroActual >= 10) {
             this.time.delayedCall(1000, () => {
-                this.audio.hablar('¡Ahora te toca a ti! Salta de dos en dos');
+                // Bloque Try/Catch por si el audio está bloqueado por el navegador
+                try { this.audio.hablar('¡Ahora te toca a ti! Salta de dos en dos'); } catch(e){}
+                
                 this.uiTexto.setText('¡Tu turno! \n Elige el salto correcto');
                 this.iniciarPractica();
             });
@@ -76,7 +84,9 @@ export class ConteoGame extends Phaser.Scene {
             targets: this.player,
             x: this.player.x + 180,
             duration: 600,
-            onStart: () => this.audio.hablar(this.numeroActual.toString()),
+            onStart: () => {
+                try { this.audio.hablar(this.numeroActual.toString()); } catch(e){}
+            },
             onComplete: () => {
                 this.time.delayedCall(800, () => this.mostrarSiguienteSalto());
             }
@@ -95,34 +105,34 @@ export class ConteoGame extends Phaser.Scene {
         const { width, height } = this.scale;
         
         const opciones = [this.paso, this.paso + 1, 1]; 
-        Phaser.Utils.Array.Shuffle(opciones); // Mezclamos las opciones de forma nativa en Phaser
+        Phaser.Utils.Array.Shuffle(opciones); // Mezclamos las opciones
         
         opciones.forEach((num, i) => {
-            // Aplicamos setScrollFactor(0) directamente al rectángulo
-            const btn = this.add.rectangle(width/2 + (i-1)*180, height - 80, 140, 90, 0x3498db, 0.8)
-                .setInteractive()
-                .setStrokeStyle(4, 0xffffff)
-                .setScrollFactor(0)
+            const xPos = width/2 + (i-1)*180;
+            const yPos = height - 80;
+
+            // EL SECRETO: El orden de estos métodos es vital para que funcionen con la cámara
+            const btn = this.add.rectangle(xPos, yPos, 140, 90, 0x3498db, 0.8)
                 .setDepth(100)
+                .setScrollFactor(0) // 1. FIJAR A LA PANTALLA
+                .setInteractive({ useHandCursor: true }) // 2. HACER INTERACTIVO DESPUÉS
+                .setStrokeStyle(4, 0xffffff)
                 .setVisible(false);
             
-            // Aplicamos setScrollFactor(0) directamente al texto
-            const txt = this.add.text(btn.x, btn.y, `+${num}`, { fontSize: '36px', fill: '#fff', fontWeight: 'bold' })
+            const txt = this.add.text(xPos, yPos, `+${num}`, { fontSize: '36px', fill: '#fff', fontWeight: 'bold' })
                 .setOrigin(0.5)
-                .setScrollFactor(0)
                 .setDepth(101)
+                .setScrollFactor(0)
                 .setVisible(false);
             
             btn.on('pointerdown', () => this.verificarSalto(num));
             
-            // Guardamos las referencias en nuestro array simple
             this.botonesUI.push({ btn, txt });
         });
     }
 
     iniciarPractica() {
         this.estado = 'PRACTICA';
-        // Mostramos los botones iterando sobre el array
         this.botonesUI.forEach(item => {
             item.btn.setVisible(true);
             item.txt.setVisible(true);
@@ -133,8 +143,8 @@ export class ConteoGame extends Phaser.Scene {
         if (this.estado !== 'PRACTICA') return;
 
         if (valorElegido === this.paso) {
-            this.estado = 'SALTANDO'; // Bloquea los botones temporalmente para evitar spam de clics
-            this.audio.hablar("¡Muy bien!");
+            this.estado = 'SALTANDO'; // Evita doble clic accidental
+            try { this.audio.hablar("¡Muy bien!"); } catch(e){}
             this.numeroActual += this.paso;
             
             const nuevaX = this.player.x + 180;
@@ -142,43 +152,38 @@ export class ConteoGame extends Phaser.Scene {
             
             this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
 
-            // Salto del jugador
             this.player.setVelocityY(-350);
             this.tweens.add({
                 targets: this.player,
                 x: nuevaX,
                 duration: 600,
                 onComplete: () => {
-                    // Verificar si llegó al objetivo final (20)
                     if (this.numeroActual >= this.objetivo) {
                         this.uiTexto.setText('¡LO LOGRASTE!');
-                        this.audio.hablar("¡Excelente! Has llegado a la meta.");
+                        try { this.audio.hablar("¡Excelente! Has llegado a la meta."); } catch(e){}
                         
-                        // Ocultar botones
                         this.botonesUI.forEach(item => { item.btn.setVisible(false); item.txt.setVisible(false); });
-                        this.cameras.main.flash(500, 46, 204, 113); // Flash verde de victoria
+                        this.cameras.main.flash(500, 46, 204, 113); 
                         
-                        // Regresar al menú tras ganar
                         this.time.delayedCall(2500, () => this.scene.start('MainMenu'));
                     } else {
-                        // Si no ha llegado a 20, permitir jugar de nuevo
                         this.estado = 'PRACTICA';
                     }
                 }
             });
 
         } else {
-            this.audio.hablar("¡Casi! Intenta sumar " + this.paso);
+            try { this.audio.hablar("¡Casi! Intenta sumar " + this.paso); } catch(e){}
             this.cameras.main.shake(200, 0.01);
         }
     }
 
     update() {
-        // Seguimiento suave de cámara
+        // Seguimiento de cámara
         const targetX = this.player.x - 250;
         this.cameras.main.scrollX = Phaser.Math.Linear(this.cameras.main.scrollX, targetX, 0.05);
 
-        // Prevención de caídas
+        // Si el niño se cae de la plataforma (Fail safe)
         if (this.player.y > this.scale.height) {
             this.player.setPosition(this.player.x - 180, this.scale.height - 250);
             this.player.setVelocity(0);
