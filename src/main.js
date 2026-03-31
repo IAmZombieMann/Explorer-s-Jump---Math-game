@@ -1,9 +1,9 @@
 import Phaser from 'https://esm.run/phaser';
 
 // Importamos las escenas
-import { Preloader } from './src/scenes/Preloader.js';
-import { MainMenu } from './src/scenes/MainMenu.js';
-import { ConteoGame } from './src/scenes/ConteoGame.js';
+import { Preloader } from './scenes/Preloader.js';
+import { MainMenu } from './scenes/MainMenu.js';
+import { ConteoGame } from './scenes/ConteoGame.js';
 import { ValorPosicionalGame } from './src/scenes/ValorPosicionalGame.js';
 
 /**
