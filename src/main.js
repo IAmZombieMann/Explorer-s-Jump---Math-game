@@ -20,11 +20,17 @@ const config = {
     
     backgroundColor: '#1a1a2e', 
     
+    // Configuración Mobile First: Ocupa el 100% de la pantalla disponible
     scale: {
-        mode: Phaser.Scale.FIT, 
+        mode: Phaser.Scale.RESIZE, 
+        width: '100%',
+        height: '100%',
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        autoRound: true
+        // Opcional: Esto le pide al navegador que intente ponerse en pantalla completa al tocar
+        expandParent: true 
     },
+
+    backgroundColor: '#1a1a2e', 
 
     physics: {
         default: 'arcade',

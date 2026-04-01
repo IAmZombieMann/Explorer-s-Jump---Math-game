@@ -8,39 +8,41 @@
     <title>Aventura Matemática: Conteo y Posición</title>
     
     <style>
-        /* Evitamos que el usuario pueda seleccionar texto o elementos del juego */
-        * {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            touch-action: none;
-        }
+    /* Reset total para Mobile First */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        /* Bloquea selección de texto y zoom táctil */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none; 
+    }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #1a1a2e; /* Color oscuro para que coincida con tu main.js */
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
-        }
+    body, html {
+        width: 100vw;
+        height: 100vh;
+        background-color: #1a1a2e;
+        overflow: hidden; /* Elimina las barras de scroll */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        #game-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    #game-container {
+        width: 100%;
+        height: 100%;
+        display: block; /* Importante para que Phaser calcule el tamaño bien */
+    }
 
-        canvas {
-            box-shadow: 0 0 30px rgba(0,0,0,0.7);
-            border-radius: 12px; /* Un poco más de redondeo para el estilo Ludic */
-        }
-    </style>
+    /* Quitamos el borde redondeado y la sombra porque ahora es pantalla completa */
+    canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
 </head>
 <body>
     <div id="game-container"></div>
