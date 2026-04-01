@@ -8,14 +8,12 @@ const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
     
-    // Tamaño base interno del juego (Proporción 16:9)
-    width: 1024,   
-    height: 576,
+    // FORMATO VERTICAL (Mobile Portrait)
+    width: 720,   
+    height: 1280,
     
     scale: {
-        // FIT ajusta el juego a la pantalla del móvil sin deformarlo
         mode: Phaser.Scale.FIT, 
-        // Lo centra usando las matemáticas internas de Phaser
         autoCenter: Phaser.Scale.CENTER_BOTH,
         autoRound: true
     },
