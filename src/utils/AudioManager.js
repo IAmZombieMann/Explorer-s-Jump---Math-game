@@ -10,7 +10,7 @@ export class AudioManager {
         this.synth.cancel();
         
         const mensaje = new SpeechSynthesisUtterance(texto);
-        mensaje.lang = 'es-ES'; // Español
+        mensaje.lang = 'es-MX'; // Español Latino
         mensaje.pitch = 1.2;    // Voz un poco más aguda/infantil
         mensaje.rate = 0.9;     // Un poco más lento para que entiendan bien
         
