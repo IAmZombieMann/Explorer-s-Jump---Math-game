@@ -18,7 +18,6 @@ export class ValorPosicionalGame extends Phaser.Scene {
         // 1. FONDO LIMPIO
         this.add.rectangle(width/2, height/2, width, height, 0x1a1a2e).setDepth(0);
         
-        // Estrellitas sutiles
         this.add.circle(width * 0.1, height * 0.1, 4, 0xffffff, 0.3).setDepth(0);
         this.add.circle(width * 0.9, height * 0.2, 6, 0xffffff, 0.2).setDepth(0);
         this.add.circle(width * 0.8, height * 0.8, 5, 0xffffff, 0.3).setDepth(0);
@@ -33,7 +32,10 @@ export class ValorPosicionalGame extends Phaser.Scene {
         
         const txtVolver = this.add.text(0, 0, '← SALIR', { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
         btnVolver.add([bgVolver, txtVolver]);
-        bgVolver.on('pointerdown', () => this.scene.start('MainMenu'));
+        bgVolver.on('pointerdown', () => {
+            try { window.speechSynthesis.cancel(); } catch(e){}
+            this.scene.start('MainMenu');
+        });
 
         // 3. ZONA DE DEPÓSITO
         this.zonaX = width * 0.7;
@@ -51,7 +53,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
         baseMaqui.lineStyle(2, 0xffffff, 0.2); 
         baseMaqui.strokeRoundedRect(this.limitesCaja.xMin + 10, this.limitesCaja.yMin + 10, 260, 260, 15);
 
-        // 4. TEXTOS DOBLES (Corregido para que no se congele el juego)
+        // 4. TEXTOS DOBLES
         this.numeroObjetivo = Phaser.Math.Between(10, 150);
         const tituloY = 120;
         
@@ -60,12 +62,10 @@ export class ValorPosicionalGame extends Phaser.Scene {
         bgTitulo.lineStyle(4, 0xf1c40f, 1); 
         bgTitulo.strokeRoundedRect((width/2) - 160, tituloY - 40, 320, 80, 20);
 
-        // Texto Fijo del Objetivo
         this.uiObjetivo = this.add.text(width / 2, tituloY - 15, `OBJETIVO: ${this.numeroObjetivo}`, {
             fontSize: '34px', fontFamily: 'Arial Black', fill: '#f1c40f', stroke: '#000', strokeThickness: 5
         }).setOrigin(0.5).setDepth(1000);
 
-        // Texto Dinámico para ayudar al niño
         this.uiFeedback = this.add.text(width / 2, tituloY + 20, '¡Arrastra las piezas!', {
             fontSize: '18px', fontFamily: 'Arial', fill: '#4ecdc4', fontWeight: 'bold'
         }).setOrigin(0.5).setDepth(1000);
@@ -76,13 +76,14 @@ export class ValorPosicionalGame extends Phaser.Scene {
         this.crearGenerador(120, height * 0.78, 'unidad', 'UNIDADES');
 
         this.setupDragEvents();
-
-        // 7. BOTÓN COMPROBAR
         this.createCheckButton(this.zonaX, this.limitesCaja.yMax + 35);
     }
 
     crearGenerador(x, y, tipo, etiqueta) {
-        const textBg = this.add.rectangle(x, y - 75, 120, 30, 0x000000, 0.5).setCornerRadius(15).setDepth(99);
+        // ¡ESTE ERA EL ERROR! Ahora usamos Graphics para crear el fondo redondeado del texto
+        const textBg = this.add.graphics({ fillStyle: { color: 0x000000, alpha: 0.5 } }).setDepth(99);
+        textBg.fillRoundedRect(x - 60, y - 90, 120, 30, 15);
+        
         this.add.text(x, y - 75, etiqueta, { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5).setDepth(100);
         
         const pieza = this.add.image(x, y, tipo);
@@ -164,6 +165,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
         const total = (this.conteoActual.centenas * 100) + (this.conteoActual.decenas * 10) + this.conteoActual.unidades;
         
         try { this.audio.hablar(`Llevas ${total}`); } catch(e){}
+        
         this.uiFeedback.setText(`Suma actual: ${total}`);
 
         this.tweens.add({
@@ -206,14 +208,13 @@ export class ValorPosicionalGame extends Phaser.Scene {
                 this.uiFeedback.setColor('#2ecc71');
                 
                 this.cameras.main.flash(500, 46, 204, 113);
-                
-                // ¡AQUÍ ESTÁ LA MAGIA! Llamamos al siguiente reto en lugar de recargar la página entera
                 this.time.delayedCall(1500, () => this.siguienteReto());
-
             } else {
                 try { this.audio.hablar(`Tienes ${total}. Intenta de nuevo.`); } catch(e){}
+                
                 this.uiFeedback.setText(`¡Llevas ${total}! Faltan piezas.`);
                 this.uiFeedback.setColor('#e74c3c');
+                
                 this.cameras.main.shake(200, 0.01);
                 
                 this.time.delayedCall(2000, () => {
@@ -224,24 +225,16 @@ export class ValorPosicionalGame extends Phaser.Scene {
         });
     }
 
-    // NUEVA FUNCIÓN: Limpia la mesa y pone un reto nuevo de forma súper fluida
     siguienteReto() {
-        // 1. Destruimos las piezas que el niño arrastró
         this.piezasVisuales.forEach(pieza => pieza.destroy());
         this.piezasVisuales = [];
-
-        // 2. Reiniciamos el contador interno
         this.conteoActual = { centenas: 0, decenas: 0, unidades: 0 };
-
-        // 3. Generamos un nuevo número objetivo
         this.numeroObjetivo = Phaser.Math.Between(10, 150);
 
-        // 4. Actualizamos los textos
         this.uiObjetivo.setText(`OBJETIVO: ${this.numeroObjetivo}`);
         this.uiFeedback.setText('¡Arrastra las piezas!');
         this.uiFeedback.setColor('#4ecdc4');
 
-        // 5. Le avisamos con voz
         try { this.audio.hablar(`Nuevo reto. Construye el número ${this.numeroObjetivo}`); } catch(e){}
     }
 }
