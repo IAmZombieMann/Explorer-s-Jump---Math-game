@@ -10,6 +10,13 @@ export class MainMenu extends Phaser.Scene {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this); 
 
+        // Saludo inicial si el audio ya fue desbloqueado por el HTML (Safari/iOS fix)
+        if (window.audioIsUnlocked) {
+            this.time.delayedCall(500, () => {
+                try { this.audio.hablar("¡Hola! Elige un juego."); } catch(e){}
+            });
+        }
+
         // 1. FONDO OSCURO
         this.add.rectangle(width/2, height/2, width, height, 0x1a1a2e).setDepth(0);
 
@@ -57,58 +64,6 @@ export class MainMenu extends Phaser.Scene {
             try { this.audio.hablar("Créditos"); } catch(e){}
             console.log("Clic en créditos funcionó");
         });
-
-        // 6. PANTALLA DE ACTIVACIÓN DE AUDIO (Modificada con evento nativo 100% a prueba de iOS)
-        this.crearPantallaActivacion(width, height);
-    }
-
-    crearPantallaActivacion(width, height) {
-        // Contenedor visual del overlay
-        const overlay = this.add.container(0, 0).setDepth(2000);
-        
-        // Lo hacemos interactivo para que Phaser también bloquee los clics hacia los botones que están debajo
-        const bgOverlay = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.85).setInteractive();
-        
-        const txt = this.add.text(width/2, height/2, '👆\nTOCA PARA\nEMPEZAR', { 
-            fontSize: '50px', 
-            fill: '#fff', 
-            fontWeight: 'bold', 
-            fontFamily: 'Arial Black',
-            align: 'center',
-            stroke: '#ef7c23',
-            strokeThickness: 8
-        }).setOrigin(0.5);
-
-        this.tweens.add({
-            targets: txt,
-            scale: 1.1,
-            duration: 800,
-            yoyo: true,
-            repeat: -1
-        });
-
-        overlay.add([bgOverlay, txt]);
-
-        // --- LA MAGIA: EVENTO NATIVO DEL NAVEGADOR ---
-        const unlockAudio = () => {
-            try { this.audio.hablar("¡Hola! Elige un juego."); } catch(e){}
-            
-            // Animación de desaparición
-            this.tweens.add({
-                targets: overlay,
-                alpha: 0,
-                duration: 400,
-                onComplete: () => overlay.destroy()
-            });
-
-            // Limpiamos los eventos para que no se sigan ejecutando
-            document.removeEventListener('click', unlockAudio);
-            document.removeEventListener('touchstart', unlockAudio);
-        };
-
-        // Escuchamos directamente al documento HTML (A Safari no le queda más remedio que aceptarlo)
-        document.addEventListener('click', unlockAudio);
-        document.addEventListener('touchstart', unlockAudio);
     }
 
     crearBotonMenu(x, y, w, h, color, texto, accion) {

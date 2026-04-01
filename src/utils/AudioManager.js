@@ -2,11 +2,7 @@ export class AudioManager {
     constructor(scene) {
         this.scene = scene;
         this.vocesDisponibles = [];
-        
         this.cargarVoces();
-        
-        // Ejecutamos la trampa para Apple apenas se instancie el audio
-        this.desbloquearAudioIOS();
     }
 
     cargarVoces() {
@@ -18,34 +14,10 @@ export class AudioManager {
         }
     }
 
-    desbloquearAudioIOS() {
-        // Usamos una variable global en window para asegurarnos de que 
-        // este truco se ejecute SOLAMENTE UNA VEZ por visita.
-        if (window.audioDesbloqueado) return;
-
-        const unlock = () => {
-            // Creamos un mensaje vacío y en silencio total
-            const mensajeSilencioso = new SpeechSynthesisUtterance('');
-            mensajeSilencioso.volume = 0; 
-            
-            // Lo disparamos. Esto "rompe" el bloqueo de Safari.
-            window.speechSynthesis.speak(mensajeSilencioso);
-            
-            window.audioDesbloqueado = true;
-            
-            // Una vez desbloqueado, quitamos los "escuchadores" para ahorrar memoria
-            document.removeEventListener('touchstart', unlock);
-            document.removeEventListener('click', unlock);
-        };
-
-        // Escuchamos el PRIMER toque o clic en CUALQUIER PARTE de la página HTML
-        document.addEventListener('touchstart', unlock, { once: true });
-        document.addEventListener('click', unlock, { once: true });
-    }
-
     hablar(texto) {
         if (!window.speechSynthesis) return;
 
+        // Cancelamos cualquier audio previo
         window.speechSynthesis.cancel();
 
         const mensaje = new SpeechSynthesisUtterance(texto);
@@ -56,15 +28,12 @@ export class AudioManager {
         const vocesEspanol = this.vocesDisponibles.filter(voz => voz.lang.startsWith('es-') || voz.lang === 'es');
 
         let vozFemenina = null;
-
         if (vocesEspanol.length > 0) {
             const nombresFemeninos = ['paulina', 'sabina', 'helena', 'monica', 'victoria', 'laura', 'luciana'];
-
             vozFemenina = vocesEspanol.find(voz => {
                 const nombreVoz = voz.name.toLowerCase();
                 return nombresFemeninos.some(nombre => nombreVoz.includes(nombre));
             });
-
             if (!vozFemenina) {
                 vozFemenina = vocesEspanol.find(voz => voz.lang === 'es-MX' || voz.lang === 'es-US' || voz.lang === 'es-419') || vocesEspanol[0];
             }
