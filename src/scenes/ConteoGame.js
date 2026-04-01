@@ -18,8 +18,17 @@ export class ConteoGame extends Phaser.Scene {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this);
 
-        // 1. FONDO
-        this.add.image(width / 2, height / 2, 'sky').setScrollFactor(0.1).setAlpha(0.6);
+        // 1. NUEVO FONDO (TileSprite para efecto Parallax Infinito)
+        // Sustituimos 'sky' por la nueva imagen cargada en el Preloader.
+        // La centramos en la pantalla y la hacemos enorme a lo ancho para que el niño pueda avanzar.
+        this.bg = this.add.tileSprite(width / 2, height / 2, width * 10, height, 'bg_jungle')
+            .setScrollFactor(0.1) // Se mueve muy lento respecto a la cámara (Parallax)
+            .setAlpha(0.8);       // Un poco de transparencia para no saturar la vista
+
+        // Ajustamos la escala de la imagen de fondo para que llene el alto del celular sin deformarse
+        const scaleBase = height / this.textures.get('bg_jungle').getSourceImage().height;
+        this.bg.tileScaleX = scaleBase;
+        this.bg.tileScaleY = scaleBase;
         
         // 2. BOTÓN SALIR
         const btnVolver = this.add.container(80, 50).setDepth(1000).setScrollFactor(0);
@@ -40,14 +49,13 @@ export class ConteoGame extends Phaser.Scene {
         // 3. FÍSICAS Y PERSONAJE
         this.plataformas = this.physics.add.staticGroup();
         
-        // ¡AJUSTE MÓVIL!: Subimos al personaje al iniciar (Antes height - 300)
+        // Ajuste móvil: Subimos al personaje
         this.player = this.physics.add.sprite(100, height - 380, 'dude'); 
         this.player.setBounce(0.1);
         this.player.setCollideWorldBounds(false); 
         this.physics.add.collider(this.player, this.plataformas);
 
         // 4. UI PRINCIPAL 
-        // ¡AJUSTE MÓVIL!: Subimos un poquito el título para compensar (Antes 100)
         const tituloY = 90;
         const bgTitulo = this.add.graphics({ fillStyle: { color: 0x2c3e50, alpha: 1 } }).setScrollFactor(0).setDepth(990);
         bgTitulo.fillRoundedRect((width/2) - 220, tituloY - 45, 440, 90, 20);
@@ -80,8 +88,6 @@ export class ConteoGame extends Phaser.Scene {
 
         this.numeroActual += this.paso;
         const nuevaX = this.numeroActual === 2 ? this.player.x + 100 : this.player.x + 240; 
-        
-        // ¡AJUSTE MÓVIL!: Subimos las plataformas (Antes height - 250)
         const nuevaY = this.scale.height - 320; 
         
         this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
@@ -111,7 +117,6 @@ export class ConteoGame extends Phaser.Scene {
     setupControlesPractica() {
         const { width, height } = this.scale;
         
-        // ¡AJUSTE MÓVIL CLAVE!: Subimos los botones bastante para esquivar la barra de Safari/Chrome (Antes height - 120)
         const yPos = height - 160; 
         
         this.crearBotonOpcion(width/2 - 200, yPos);
@@ -180,8 +185,6 @@ export class ConteoGame extends Phaser.Scene {
             this.numeroActual = respuestaCorrecta;
             
             const nuevaX = this.player.x + 240;
-            
-            // ¡AJUSTE MÓVIL!: Subimos también las plataformas que se generan al responder (Antes height - 250)
             const nuevaY = this.scale.height - 320; 
             
             this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
@@ -231,7 +234,6 @@ export class ConteoGame extends Phaser.Scene {
         this.cameras.main.scrollX = Phaser.Math.Linear(this.cameras.main.scrollX, targetX, 0.05);
 
         if (this.player.y > this.scale.height) {
-            // ¡AJUSTE MÓVIL!: El punto de respawn al caerse también se ajustó hacia arriba
             this.player.setPosition(this.player.x - 180, this.scale.height - 450);
             this.player.setVelocity(0);
         }

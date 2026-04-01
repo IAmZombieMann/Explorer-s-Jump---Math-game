@@ -7,6 +7,8 @@ export class Preloader extends Phaser.Scene {
 
     preload() {
         const { width, height } = this.cameras.main;
+        // ... dentro de tu función preload() en Preloader.js
+        this.load.image('bg_jungle', 'https://raw.githubusercontent.com/IAmZombieMann/Explorer-s-Jump---Math-game/main/src/scenes/images/backgrounds/image%20(11).png');
 
         // Establecer color de fondo de carga inmediatamente
         this.cameras.main.setBackgroundColor('#1a1a2e');
