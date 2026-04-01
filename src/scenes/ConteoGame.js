@@ -21,10 +21,8 @@ export class ConteoGame extends Phaser.Scene {
         // 1. FONDO
         this.add.image(width / 2, height / 2, 'sky').setScrollFactor(0.1).setAlpha(0.6);
         
-        // 2. BOTÓN SALIR (CORREGIDO PARA CÁMARAS CON SCROLL)
+        // 2. BOTÓN SALIR
         const btnVolver = this.add.container(80, 50).setDepth(1000).setScrollFactor(0);
-        
-        // Le damos tamaño al contenedor y lo hacemos interactivo a él
         btnVolver.setSize(110, 40);
         btnVolver.setInteractive({ useHandCursor: true });
         
@@ -32,10 +30,8 @@ export class ConteoGame extends Phaser.Scene {
         bgVolver.fillRoundedRect(-55, -20, 110, 40, 20); 
         
         const txtVolver = this.add.text(0, 0, '← SALIR', { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
-        
         btnVolver.add([bgVolver, txtVolver]);
         
-        // El evento de clic ahora está en el contenedor
         btnVolver.on('pointerdown', () => {
             try { window.speechSynthesis.cancel(); } catch(e){}
             this.scene.start('MainMenu');
@@ -43,13 +39,16 @@ export class ConteoGame extends Phaser.Scene {
 
         // 3. FÍSICAS Y PERSONAJE
         this.plataformas = this.physics.add.staticGroup();
-        this.player = this.physics.add.sprite(100, height - 300, 'dude'); 
+        
+        // ¡AJUSTE MÓVIL!: Subimos al personaje al iniciar (Antes height - 300)
+        this.player = this.physics.add.sprite(100, height - 380, 'dude'); 
         this.player.setBounce(0.1);
         this.player.setCollideWorldBounds(false); 
         this.physics.add.collider(this.player, this.plataformas);
 
-        // 4. UI PRINCIPAL (Cartel superior elegante)
-        const tituloY = 100;
+        // 4. UI PRINCIPAL 
+        // ¡AJUSTE MÓVIL!: Subimos un poquito el título para compensar (Antes 100)
+        const tituloY = 90;
         const bgTitulo = this.add.graphics({ fillStyle: { color: 0x2c3e50, alpha: 1 } }).setScrollFactor(0).setDepth(990);
         bgTitulo.fillRoundedRect((width/2) - 220, tituloY - 45, 440, 90, 20);
         bgTitulo.lineStyle(4, 0xf1c40f, 1); 
@@ -81,7 +80,9 @@ export class ConteoGame extends Phaser.Scene {
 
         this.numeroActual += this.paso;
         const nuevaX = this.numeroActual === 2 ? this.player.x + 100 : this.player.x + 240; 
-        const nuevaY = this.scale.height - 250; 
+        
+        // ¡AJUSTE MÓVIL!: Subimos las plataformas (Antes height - 250)
+        const nuevaY = this.scale.height - 320; 
         
         this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
 
@@ -109,7 +110,9 @@ export class ConteoGame extends Phaser.Scene {
 
     setupControlesPractica() {
         const { width, height } = this.scale;
-        const yPos = height - 120; 
+        
+        // ¡AJUSTE MÓVIL CLAVE!: Subimos los botones bastante para esquivar la barra de Safari/Chrome (Antes height - 120)
+        const yPos = height - 160; 
         
         this.crearBotonOpcion(width/2 - 200, yPos);
         this.crearBotonOpcion(width/2, yPos);
@@ -177,7 +180,9 @@ export class ConteoGame extends Phaser.Scene {
             this.numeroActual = respuestaCorrecta;
             
             const nuevaX = this.player.x + 240;
-            const nuevaY = this.scale.height - 250;
+            
+            // ¡AJUSTE MÓVIL!: Subimos también las plataformas que se generan al responder (Antes height - 250)
+            const nuevaY = this.scale.height - 320; 
             
             this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
 
@@ -199,7 +204,7 @@ export class ConteoGame extends Phaser.Scene {
                         });
                     } else {
                         this.time.delayedCall(500, () => {
-                            try { this.audio.hablar('Y ahora, ¿Que numero sigue?'); } catch(e){}
+                            try { this.audio.hablar('¿Y ahora?'); } catch(e){}
                             this.iniciarPractica(); 
                         });
                     }
@@ -226,7 +231,8 @@ export class ConteoGame extends Phaser.Scene {
         this.cameras.main.scrollX = Phaser.Math.Linear(this.cameras.main.scrollX, targetX, 0.05);
 
         if (this.player.y > this.scale.height) {
-            this.player.setPosition(this.player.x - 180, this.scale.height - 350);
+            // ¡AJUSTE MÓVIL!: El punto de respawn al caerse también se ajustó hacia arriba
+            this.player.setPosition(this.player.x - 180, this.scale.height - 450);
             this.player.setVelocity(0);
         }
     }
