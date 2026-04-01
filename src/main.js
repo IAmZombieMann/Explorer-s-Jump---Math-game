@@ -1,33 +1,23 @@
 import * as Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.esm.js';
-
-// Importamos las escenas
 import { Preloader } from './scenes/Preloader.js';
 import { MainMenu } from './scenes/MainMenu.js';
 import { ConteoGame } from './scenes/ConteoGame.js';
 import { ValorPosicionalGame } from './scenes/ValorPosicionalGame.js';
 
-/**
- * Configuración central del motor Phaser 3
- * Optimizada para dispositivos móviles (Mobile-First)
- */
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
     
-    // Resolución nativa de diseño (16:9)
+    // Tamaño base interno del juego (Proporción 16:9)
     width: 1024,   
     height: 576,
     
-    backgroundColor: '#1a1a2e', 
-    
-    // Configuración Mobile First: Ocupa el 100% de la pantalla disponible
     scale: {
-        mode: Phaser.Scale.RESIZE, 
-        width: '100%',
-        height: '100%',
+        // FIT ajusta el juego a la pantalla del móvil sin deformarlo
+        mode: Phaser.Scale.FIT, 
+        // Lo centra usando las matemáticas internas de Phaser
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        // Opcional: Esto le pide al navegador que intente ponerse en pantalla completa al tocar
-        expandParent: true 
+        autoRound: true
     },
 
     backgroundColor: '#1a1a2e', 
@@ -40,7 +30,6 @@ const config = {
         }
     },
 
-    // ¡IMPORTANTE! Deben estar todas aquí para poder navegar entre ellas
     scene: [
         Preloader, 
         MainMenu,
@@ -54,7 +43,6 @@ const config = {
     }
 };
 
-// Inicialización del juego
 const game = new Phaser.Game(config);
 
 export default game;
