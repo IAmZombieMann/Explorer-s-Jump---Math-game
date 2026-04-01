@@ -55,7 +55,7 @@ export class ConteoGame extends Phaser.Scene {
         bgTitulo.strokeRoundedRect((width/2) - 220, tituloY - 45, 440, 90, 20);
 
         this.uiTexto = this.add.text(width / 2, tituloY, '¡Mira cómo cuento\nde 2 en 2!', {
-            fontSize: '28px', fontFamily: 'Arial Black', fill: '#f1c40f', stroke: '#000', strokeThickness: 5, align: 'center'
+            fontSize: '28px', fontFamily: 'Arial Black', fill: '#f1c40f', stroke: '#000', strokeThickness: 1, align: 'center'
         }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
 
         this.setupControlesPractica();
@@ -103,7 +103,7 @@ export class ConteoGame extends Phaser.Scene {
     crearPlataforma(x, y, numero) {
         const plat = this.plataformas.create(x, y, 'plataforma').setScale(0.6).refreshBody();
         this.add.text(x, y - 45, numero.toString(), {
-            fontSize: '34px', fontFamily: 'Arial Black', fill: '#ffff00', stroke: '#000', strokeThickness: 5
+            fontSize: '34px', fontFamily: 'Arial Black', fill: '#ffff00', stroke: '#000', strokeThickness: 2
         }).setOrigin(0.5);
         return plat;
     }
@@ -135,7 +135,7 @@ export class ConteoGame extends Phaser.Scene {
         bg.strokeRoundedRect(-w/2, -h/2, w, h, 20);
 
         const txt = this.add.text(0, 0, '', { 
-            fontSize: '48px', fill: '#fff', fontWeight: 'bold', fontFamily: 'Arial Black', stroke: '#000', strokeThickness: 5
+            fontSize: '48px', fill: '#fff', fontWeight: 'bold', fontFamily: 'Arial Black', stroke: '#000', strokeThickness: 2
         }).setOrigin(0.5);
 
         container.add([bgShadow, bg, txt]);
