@@ -1,26 +1,51 @@
 export class AudioManager {
     constructor(scene) {
         this.scene = scene;
-        this.synth = window.speechSynthesis;
+        this.vocesDisponibles = [];
+        
+        // Cargamos las voces apenas se inicia el juego
+        this.cargarVoces();
     }
 
-    // Voz que narra las instrucciones
-    hablar(texto) {
-        // Cancelar cualquier voz previa para no solaparse
-        this.synth.cancel();
+    cargarVoces() {
+        // En Safari, a veces las voces tardan un poco en cargar, 
+        // así que usamos este evento para capturarlas en cuanto estén listas.
+        this.vocesDisponibles = window.speechSynthesis.getVoices();
         
-        const mensaje = new SpeechSynthesisUtterance(texto);
-        mensaje.lang = 'es-MX'; // Español Latino
-        mensaje.pitch = 1.2;    // Voz un poco más aguda/infantil
-        mensaje.rate = 0.9;     // Un poco más lento para que entiendan bien
-        
-        this.synth.speak(mensaje);
-    }
-
-    // Efectos de sonido rápidos (Cargar en Preloader antes)
-    playSFX(key) {
-        if (this.scene.sound.get(key)) {
-            this.scene.sound.play(key, { volume: 0.5 });
+        if (this.vocesDisponibles.length === 0) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                this.vocesDisponibles = window.speechSynthesis.getVoices();
+            };
         }
+    }
+
+    hablar(texto) {
+        // Verificamos si el navegador soporta síntesis de voz
+        if (!window.speechSynthesis) return;
+
+        // Cancelamos cualquier audio que se esté reproduciendo (Evita que Safari se trabe)
+        window.speechSynthesis.cancel();
+
+        const mensaje = new SpeechSynthesisUtterance(texto);
+        
+        // 1. Configuramos el idioma por defecto
+        mensaje.lang = 'es-MX'; 
+        mensaje.rate = 1; // Velocidad normal
+
+        // 2. Buscamos EXPLÍCITAMENTE una voz en español para obligar a iOS Safari a usarla
+        // Primero intentamos buscar latino (MX o US), si no, cualquier español (ES)
+        let vozEspanol = this.vocesDisponibles.find(voz => voz.lang === 'es-MX' || voz.lang === 'es-US' || voz.lang === 'es-419');
+        
+        if (!vozEspanol) {
+            vozEspanol = this.vocesDisponibles.find(voz => voz.lang.startsWith('es-'));
+        }
+
+        // 3. Si encontramos la voz, se la asignamos directamente al mensaje
+        if (vozEspanol) {
+            mensaje.voice = vozEspanol;
+        }
+
+        // 4. Reproducimos
+        window.speechSynthesis.speak(mensaje);
     }
 }
