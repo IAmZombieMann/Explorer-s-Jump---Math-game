@@ -18,10 +18,10 @@
         body, html {
             width: 100vw;
             height: 100vh;
-            background-color: #1a1a2e;
+            background-color: #1a1a2e; /* Color de fondo oscuro de la app */
             overflow: hidden;
             
-            /* AQUÍ ESTÁ EL FLEXBOX MAGISTRAL */
+            /* AQUÍ ESTÁ EL FLEXBOX MAGISTRAL para centrar el juego */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -36,9 +36,12 @@
             align-items: center;
         }
 
-        /* Le devolvemos un poco de estética Ludic sin romper el tamaño */
-        canvas {
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        /* Estilo sutil para desktop para que no flote en la nada */
+        @media (min-width: 1025px) {
+            canvas {
+                box-shadow: 0 0 40px rgba(0,0,0,0.8);
+                border-radius: 12px;
+            }
         }
     </style>
 </head>
