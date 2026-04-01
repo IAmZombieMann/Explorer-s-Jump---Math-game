@@ -8,8 +8,17 @@ export class ConteoGame extends Phaser.Scene {
 
     init() {
         this.paso = 2; 
-        this.numeroActual = 0;
-        this.objetivo = 20;
+        
+        // ¡NUEVO!: Generamos un número aleatorio entre 0 y 40
+        this.numeroInicial = Phaser.Math.Between(0, 40);
+        this.numeroActual = this.numeroInicial;
+        
+        // La explicación siempre dará 5 saltos (5 saltos * paso 2 = 10)
+        this.limiteExplicacion = this.numeroInicial + 10;
+        
+        // El objetivo será dar otros 5 saltos más en la práctica
+        this.objetivo = this.numeroInicial + 20;
+
         this.estado = 'EXPLICACION'; 
         this.botonesUI = []; 
     }
@@ -18,14 +27,11 @@ export class ConteoGame extends Phaser.Scene {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this);
 
-        // 1. NUEVO FONDO (TileSprite para efecto Parallax Infinito)
-        // Sustituimos 'sky' por la nueva imagen cargada en el Preloader.
-        // La centramos en la pantalla y la hacemos enorme a lo ancho para que el niño pueda avanzar.
+        // 1. FONDO (Con el nuevo TileSprite)
         this.bg = this.add.tileSprite(width / 2, height / 2, width * 10, height, 'bg_jungle')
-            .setScrollFactor(0.1) // Se mueve muy lento respecto a la cámara (Parallax)
-            .setAlpha(0.8);       // Un poco de transparencia para no saturar la vista
+            .setScrollFactor(0.1) 
+            .setAlpha(0.8);       
 
-        // Ajustamos la escala de la imagen de fondo para que llene el alto del celular sin deformarse
         const scaleBase = height / this.textures.get('bg_jungle').getSourceImage().height;
         this.bg.tileScaleX = scaleBase;
         this.bg.tileScaleY = scaleBase;
@@ -49,7 +55,6 @@ export class ConteoGame extends Phaser.Scene {
         // 3. FÍSICAS Y PERSONAJE
         this.plataformas = this.physics.add.staticGroup();
         
-        // Ajuste móvil: Subimos al personaje
         this.player = this.physics.add.sprite(100, height - 380, 'dude'); 
         this.player.setBounce(0.1);
         this.player.setCollideWorldBounds(false); 
@@ -76,7 +81,8 @@ export class ConteoGame extends Phaser.Scene {
     }
 
     mostrarSiguienteSalto() {
-        if (this.numeroActual >= 10) {
+        // Usamos el nuevo límite dinámico en lugar del "10" estático
+        if (this.numeroActual >= this.limiteExplicacion) {
             this.time.delayedCall(1000, () => {
                 try { this.audio.hablar('¡Ahora te toca a ti! ¿Qué número sigue?'); } catch(e){}
                 this.uiTexto.setText('¡Tu turno!\n¿Qué número sigue?');
@@ -87,7 +93,11 @@ export class ConteoGame extends Phaser.Scene {
         }
 
         this.numeroActual += this.paso;
-        const nuevaX = this.numeroActual === 2 ? this.player.x + 100 : this.player.x + 240; 
+        
+        // Calculamos si es el "primer salto" dinámicamente comparando con el inicio
+        const esPrimerSalto = (this.numeroActual === this.numeroInicial + this.paso);
+        const nuevaX = esPrimerSalto ? this.player.x + 100 : this.player.x + 240; 
+        
         const nuevaY = this.scale.height - 320; 
         
         this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
@@ -195,6 +205,7 @@ export class ConteoGame extends Phaser.Scene {
                 x: nuevaX,
                 duration: 600,
                 onComplete: () => {
+                    // Usamos el objetivo dinámico
                     if (this.numeroActual >= this.objetivo) {
                         this.uiTexto.setText('¡LO LOGRASTE! 🎉');
                         this.uiTexto.setColor('#2ecc71');
@@ -207,7 +218,7 @@ export class ConteoGame extends Phaser.Scene {
                         });
                     } else {
                         this.time.delayedCall(500, () => {
-                            try { this.audio.hablar('Y ahora, ¿Que numero sigue?'); } catch(e){}
+                            try { this.audio.hablar('¿Y ahora?'); } catch(e){}
                             this.iniciarPractica(); 
                         });
                     }
