@@ -199,7 +199,7 @@ export class ConteoGame extends Phaser.Scene {
                         });
                     } else {
                         this.time.delayedCall(500, () => {
-                            try { this.audio.hablar('¿Y ahora?'); } catch(e){}
+                            try { this.audio.hablar('Y ahora, ¿Que numero sigue?'); } catch(e){}
                             this.iniciarPractica(); 
                         });
                     }
