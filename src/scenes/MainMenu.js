@@ -10,13 +10,6 @@ export class MainMenu extends Phaser.Scene {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this); 
 
-        // Saludo inicial si el audio ya fue desbloqueado por el HTML (Safari/iOS fix)
-        if (window.audioIsUnlocked) {
-            this.time.delayedCall(500, () => {
-                try { this.audio.hablar("¡Hola! Elige un juego."); } catch(e){}
-            });
-        }
-
         // 1. FONDO OSCURO
         this.add.rectangle(width/2, height/2, width, height, 0x1a1a2e).setDepth(0);
 
@@ -34,9 +27,9 @@ export class MainMenu extends Phaser.Scene {
 
         // 4. PANEL VERTICAL PRINCIPAL
         const panelX = width * 0.5;
-        const panelY = height * 0.55;
-        const panelW = width * 0.85; 
-        const panelH = height * 0.65; 
+        const panelY = height * 0.52; // Subido un poco para dar aire abajo
+        const panelW = width * 0.9; 
+        const panelH = height * 0.75; 
         
         const graphics = this.add.graphics({ fillStyle: { color: 0xa7e1f4, alpha: 1 } }).setDepth(200);
         graphics.fillRoundedRect(panelX - panelW/2, panelY - panelH/2, panelW, panelH, 40);
@@ -45,34 +38,43 @@ export class MainMenu extends Phaser.Scene {
 
         this.crearLazoTitulo(panelX, panelY - panelH/2, panelW);
 
-        // 5. BOTONES
+        // 5. CONFIGURACIÓN DE BOTONES (Distribución Vertical)
         const buttonW = panelW * 0.85;
-        const buttonH = panelH * 0.15; 
-        const spacing = panelH * 0.25; 
-        
-        this.crearBotonMenu(panelX, panelY - spacing, buttonW, buttonH, 0xe0e226, 'Jugar de 2 en 2', () => {
-            try { this.audio.hablar("¡Prepárate para saltar!"); } catch(e){}
-            // El retraso ahora es solo para el cambio de escena, NO para la acción entera
-            this.time.delayedCall(100, () => this.scene.start('ConteoGame'));
+        const buttonH = 75; // Un poco más delgados para que quepan 5
+        const startY = panelY - (panelH * 0.3);
+        const spacing = 105; // Espacio fijo entre botones
+
+        // --- BOTONES DE CONTEO ---
+        this.crearBotonMenu(panelX, startY, buttonW, buttonH, 0xe0e226, 'Contar de 2 en 2', () => {
+            try { this.audio.hablar("¡Saltemos de dos en dos!"); } catch(e){}
+            this.scene.start('ConteoGame', { paso: 2 });
         });
 
-        this.crearBotonMenu(panelX, panelY, buttonW, buttonH, 0xef7c23, 'Unidades y Decenas', () => {
+        this.crearBotonMenu(panelX, startY + spacing, buttonW, buttonH, 0xef7c23, 'Contar de 3 en 3', () => {
+            try { this.audio.hablar("¡Saltemos de tres en tres!"); } catch(e){}
+            this.scene.start('ConteoGame', { paso: 3 });
+        });
+
+        this.crearBotonMenu(panelX, startY + (spacing * 2), buttonW, buttonH, 0xe67e22, 'Contar de 4 en 4', () => {
+            try { this.audio.hablar("¡Saltemos de cuatro en cuatro!"); } catch(e){}
+            this.scene.start('ConteoGame', { paso: 4 });
+        });
+
+        // --- BOTÓN VALOR POSICIONAL ---
+        this.crearBotonMenu(panelX, startY + (spacing * 3), buttonW, buttonH, 0x3498db, 'Unidades y Decenas', () => {
             try { this.audio.hablar("¡Vamos a contar!"); } catch(e){}
-            this.time.delayedCall(100, () => this.scene.start('ValorPosicionalGame'));
+            this.scene.start('ValorPosicionalGame');
         });
 
-        // NUEVO BOTÓN: ACTIVAR AUDIO (Reemplaza a Créditos)
-        const btnAudio = this.crearBotonMenu(panelX, panelY + spacing, buttonW, buttonH, 0x9b59b6, '🔊 ACTIVAR AUDIO', () => {
+        // --- BOTÓN ACTIVAR AUDIO (Feedback Púrpura) ---
+        const btnAudio = this.crearBotonMenu(panelX, startY + (spacing * 4), buttonW, buttonH, 0x9b59b6, '🔊 ACTIVAR AUDIO', () => {
             try { 
-                this.audio.hablar("¡Audio activado y listo para jugar!"); 
-                
-                // Cambiamos el color a VERDE para confirmar visualmente
+                this.audio.hablar("¡Audio activado y listo!"); 
                 btnAudio.bg.clear();
                 btnAudio.bg.fillStyle(0x2ecc71); 
                 btnAudio.bg.fillRoundedRect(-buttonW/2, -buttonH/2, buttonW, buttonH, 25);
                 btnAudio.bg.lineStyle(5, 0xffffff, 1);
                 btnAudio.bg.strokeRoundedRect(-buttonW/2, -buttonH/2, buttonW, buttonH, 25);
-                
                 btnAudio.txt.setText('✅ AUDIO LISTO');
             } catch(e){}
         });
@@ -83,35 +85,31 @@ export class MainMenu extends Phaser.Scene {
         container.setSize(w, h);
         container.setInteractive({ useHandCursor: true });
         
-        const bgShadow = this.add.rectangle(0, 8, w, h, 0x000000, 0.4).setOrigin(0.5);
+        const bgShadow = this.add.rectangle(0, 6, w, h, 0x000000, 0.4).setOrigin(0.5);
         
         const bg = this.add.graphics({ fillStyle: { color: color } });
         bg.fillRoundedRect(-w/2, -h/2, w, h, 25);
-        bg.lineStyle(5, 0xffffff, 1);
+        bg.lineStyle(4, 0xffffff, 1);
         bg.strokeRoundedRect(-w/2, -h/2, w, h, 25);
 
         const txt = this.add.text(0, 0, texto, { 
-            fontSize: '32px', 
+            fontSize: '28px', 
             fill: '#fff', 
             fontWeight: 'bold', 
             fontFamily: 'Arial Black',
             stroke: '#000', 
-            strokeThickness: 5
+            strokeThickness: 4
         }).setOrigin(0.5);
         
         container.add([bgShadow, bg, txt]);
 
-        container.on('pointerdown', () => { container.setScale(0.92); });
+        container.on('pointerdown', () => { container.setScale(0.95); });
         container.on('pointerout', () => { container.setScale(1); });
-        
-        // ¡EL SECRETO DE SAFARI DESCUBIERTO!
-        // Ejecutamos "accion()" INMEDIATAMENTE al soltar el dedo, sin retrasos de tiempo.
         container.on('pointerup', () => { 
             container.setScale(1); 
             accion(); 
         });
 
-        // Retornamos las partes para poder cambiarles el color y texto desde afuera
         return { container, bg, txt }; 
     }
 
@@ -124,15 +122,15 @@ export class MainMenu extends Phaser.Scene {
 
     crearLazoTitulo(x, y, panelW) {
         const lazoW = panelW * 0.85;
-        const lazoH = 90;
+        const lazoH = 80;
         const graphics = this.add.graphics({ fillStyle: { color: 0xf0619a, alpha: 1 } }).setDepth(210);
         
         graphics.fillRoundedRect(x - lazoW/2, y - lazoH/2, lazoW, lazoH, 20);
         graphics.lineStyle(5, 0xbf2c61, 1);
         graphics.strokeRoundedRect(x - lazoW/2, y - lazoH/2, lazoW, lazoH, 20);
 
-        this.add.text(x, y, 'MENÚ PRINCIPAL', { 
-            fontSize: '42px', 
+        this.add.text(x, y, 'MATEMÁTICAS', { 
+            fontSize: '38px', 
             fill: '#fff', 
             fontWeight: 'bold',
             fontFamily: 'Arial Black',
@@ -142,16 +140,16 @@ export class MainMenu extends Phaser.Scene {
     }
 
     crearBarraHUD(x, y, iconChar, barColor, progresoPercent) {
-        const barW = 100; 
-        const barH = 25;
-        const barX = x + (barW/2) + 30;
+        const barW = 80; 
+        const barH = 20;
+        const barX = x + (barW/2) + 25;
 
-        this.add.text(x, y, iconChar, { fontSize: '38px' }).setOrigin(0, 0.5).setDepth(100);
+        this.add.text(x, y, iconChar, { fontSize: '32px' }).setOrigin(0, 0.5).setDepth(100);
         
         const bg = this.add.graphics({ fillStyle: { color: 0xcccccc } });
-        bg.fillRoundedRect(barX - barW/2, y - barH/2, barW, barH, 12).setDepth(100);
+        bg.fillRoundedRect(barX - barW/2, y - barH/2, barW, barH, 10).setDepth(100);
         
         const progress = this.add.graphics({ fillStyle: { color: barColor } });
-        progress.fillRoundedRect(barX - barW/2, y - barH/2, barW * progresoPercent, barH, 12).setDepth(101);
+        progress.fillRoundedRect(barX - barW/2, y - barH/2, barW * progresoPercent, barH, 10).setDepth(101);
     }
 }

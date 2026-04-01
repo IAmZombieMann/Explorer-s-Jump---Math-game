@@ -6,18 +6,17 @@ export class ConteoGame extends Phaser.Scene {
         super('ConteoGame');
     }
 
-    init() {
-        this.paso = 2; 
+    init(data) {
+        // Recibe el paso (2, 3 o 4) desde el MainMenu. Por defecto 2.
+        this.paso = data.paso || 2; 
         
-        // ¡NUEVO!: Generamos un número aleatorio entre 0 y 40
+        // Generamos un número aleatorio inicial entre 0 y 40
         this.numeroInicial = Phaser.Math.Between(0, 40);
         this.numeroActual = this.numeroInicial;
         
-        // La explicación siempre dará 5 saltos (5 saltos * paso 2 = 10)
-        this.limiteExplicacion = this.numeroInicial + 10;
-        
-        // El objetivo será dar otros 5 saltos más en la práctica
-        this.objetivo = this.numeroInicial + 20;
+        // Límites dinámicos: 5 saltos de guía + 5 saltos de práctica
+        this.limiteExplicacion = this.numeroInicial + (this.paso * 5);
+        this.objetivo = this.numeroInicial + (this.paso * 10);
 
         this.estado = 'EXPLICACION'; 
         this.botonesUI = []; 
@@ -27,7 +26,7 @@ export class ConteoGame extends Phaser.Scene {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this);
 
-        // 1. FONDO (Con el nuevo TileSprite)
+        // 1. FONDO (TileSprite para efecto Parallax Infinito)
         this.bg = this.add.tileSprite(width / 2, height / 2, width * 10, height, 'bg_jungle')
             .setScrollFactor(0.1) 
             .setAlpha(0.8);       
@@ -55,19 +54,20 @@ export class ConteoGame extends Phaser.Scene {
         // 3. FÍSICAS Y PERSONAJE
         this.plataformas = this.physics.add.staticGroup();
         
+        // Ajuste móvil: Posición inicial elevada
         this.player = this.physics.add.sprite(100, height - 380, 'dude'); 
         this.player.setBounce(0.1);
         this.player.setCollideWorldBounds(false); 
         this.physics.add.collider(this.player, this.plataformas);
 
-        // 4. UI PRINCIPAL 
+        // 4. UI PRINCIPAL (Título dinámico según el paso)
         const tituloY = 90;
         const bgTitulo = this.add.graphics({ fillStyle: { color: 0x2c3e50, alpha: 1 } }).setScrollFactor(0).setDepth(990);
         bgTitulo.fillRoundedRect((width/2) - 220, tituloY - 45, 440, 90, 20);
         bgTitulo.lineStyle(4, 0xf1c40f, 1); 
         bgTitulo.strokeRoundedRect((width/2) - 220, tituloY - 45, 440, 90, 20);
 
-        this.uiTexto = this.add.text(width / 2, tituloY, '¡Mira cómo cuento\nde 2 en 2!', {
+        this.uiTexto = this.add.text(width / 2, tituloY, `¡Mira cómo cuento\nde ${this.paso} en ${this.paso}!`, {
             fontSize: '28px', fontFamily: 'Arial Black', fill: '#f1c40f', stroke: '#000', strokeThickness: 1, align: 'center'
         }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
 
@@ -81,7 +81,6 @@ export class ConteoGame extends Phaser.Scene {
     }
 
     mostrarSiguienteSalto() {
-        // Usamos el nuevo límite dinámico en lugar del "10" estático
         if (this.numeroActual >= this.limiteExplicacion) {
             this.time.delayedCall(1000, () => {
                 try { this.audio.hablar('¡Ahora te toca a ti! ¿Qué número sigue?'); } catch(e){}
@@ -94,10 +93,9 @@ export class ConteoGame extends Phaser.Scene {
 
         this.numeroActual += this.paso;
         
-        // Calculamos si es el "primer salto" dinámicamente comparando con el inicio
+        // Verificamos si es el primer salto relativo al inicio
         const esPrimerSalto = (this.numeroActual === this.numeroInicial + this.paso);
         const nuevaX = esPrimerSalto ? this.player.x + 100 : this.player.x + 240; 
-        
         const nuevaY = this.scale.height - 320; 
         
         this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
@@ -126,8 +124,7 @@ export class ConteoGame extends Phaser.Scene {
 
     setupControlesPractica() {
         const { width, height } = this.scale;
-        
-        const yPos = height - 160; 
+        const yPos = height - 160; // Elevado para esquivar menús del navegador
         
         this.crearBotonOpcion(width/2 - 200, yPos);
         this.crearBotonOpcion(width/2, yPos);
@@ -159,7 +156,8 @@ export class ConteoGame extends Phaser.Scene {
         container.on('pointerout', () => { container.setScale(1); });
         container.on('pointerup', () => { 
             container.setScale(1);
-            this.time.delayedCall(50, () => this.verificarSalto(container.valorAsignado));
+            // Sin delay para asegurar respuesta de audio en Safari
+            this.verificarSalto(container.valorAsignado);
         });
 
         this.botonesUI.push({ container, txt });
@@ -169,6 +167,7 @@ export class ConteoGame extends Phaser.Scene {
         this.estado = 'PRACTICA';
         
         const respuestaCorrecta = this.numeroActual + this.paso;
+        // Distractores basados en el paso actual
         const opciones = [respuestaCorrecta, respuestaCorrecta - 1, respuestaCorrecta + 1]; 
         Phaser.Utils.Array.Shuffle(opciones); 
         
@@ -205,7 +204,6 @@ export class ConteoGame extends Phaser.Scene {
                 x: nuevaX,
                 duration: 600,
                 onComplete: () => {
-                    // Usamos el objetivo dinámico
                     if (this.numeroActual >= this.objetivo) {
                         this.uiTexto.setText('¡LO LOGRASTE! 🎉');
                         this.uiTexto.setColor('#2ecc71');
@@ -226,7 +224,7 @@ export class ConteoGame extends Phaser.Scene {
             });
 
         } else {
-            try { this.audio.hablar("¡Casi! Sigue contando de " + this.paso + " en " + this.paso); } catch(e){}
+            try { this.audio.hablar(`¡Casi! Sigue contando de ${this.paso} en ${this.paso}`); } catch(e){}
             this.uiTexto.setText('¡Intenta de nuevo!');
             this.uiTexto.setColor('#e74c3c');
             this.cameras.main.shake(200, 0.01);
