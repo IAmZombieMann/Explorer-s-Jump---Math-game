@@ -29,7 +29,7 @@ export class AudioManager {
 
         const mensaje = new SpeechSynthesisUtterance(texto);
         mensaje.lang = 'es-MX'; // Idioma base
-        mensaje.rate = 1;       // Velocidad normal
+        mensaje.rate = 0.8;       // Velocidad normal
         mensaje.pitch = 1.1;    // Un tono ligerísimamente más alto (ayuda a que suene más femenina/infantil)
 
         // 1. Filtramos TODAS las voces que hablen español

@@ -164,7 +164,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
         
         // Decimos el nuevo total al eliminar una pieza
         const total = (this.conteoActual.centenas * 100) + (this.conteoActual.decenas * 10) + this.conteoActual.unidades;
-        // this.audio.hablar(`Llevas ${total}`);
+        this.audio.hablar(`Llevas ${total}`);
 
         this.tweens.add({
             targets: pieza,
