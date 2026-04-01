@@ -15,13 +15,15 @@ export class ValorPosicionalGame extends Phaser.Scene {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this);
 
-        // 1. FONDO LIMPIO
-        this.add.rectangle(width/2, height/2, width, height, 0x1a1a2e).setDepth(0);
+        // 1. NUEVO FONDO (Imagen escalada para cubrir toda la pantalla)
+        const bg = this.add.image(width / 2, height / 2, 'bg_valor_posicional').setDepth(0);
         
-        this.add.circle(width * 0.1, height * 0.1, 4, 0xffffff, 0.3).setDepth(0);
-        this.add.circle(width * 0.9, height * 0.2, 6, 0xffffff, 0.2).setDepth(0);
-        this.add.circle(width * 0.8, height * 0.8, 5, 0xffffff, 0.3).setDepth(0);
-        this.add.circle(width * 0.2, height * 0.9, 7, 0xffffff, 0.2).setDepth(0);
+        // Calculamos la escala necesaria para que cubra el ancho y el alto sin deformarse
+        const scaleFactor = Math.max(width / bg.width, height / bg.height);
+        bg.setScale(scaleFactor);
+        
+        // Oscurecemos ligeramente el fondo para que las piezas y la interfaz resalten bien
+        bg.setTint(0xaaaaaa); 
 
         // 2. BOTÓN VOLVER
         const btnVolver = this.add.container(80, 50).setDepth(1000);
@@ -46,7 +48,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
         };
 
         const baseMaqui = this.add.graphics().setDepth(1);
-        baseMaqui.fillStyle(0x000000, 0.3); 
+        baseMaqui.fillStyle(0x000000, 0.4); // Fondo de la caja un poquito más oscuro para que resalte del nuevo fondo
         baseMaqui.fillRoundedRect(this.limitesCaja.xMin, this.limitesCaja.yMin, 280, 280, 25);
         baseMaqui.lineStyle(4, 0x4ecdc4, 1); 
         baseMaqui.strokeRoundedRect(this.limitesCaja.xMin, this.limitesCaja.yMin, 280, 280, 25);
@@ -67,7 +69,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(1000);
 
         this.uiFeedback = this.add.text(width / 2, tituloY + 20, '¡Arrastra las piezas!', {
-            fontSize: '18px', fontFamily: 'Arial', fill: '#4ecdc4', fontWeight: 'bold'
+            fontSize: '18px', fontFamily: 'Arial', fill: '#4ecdc4', fontWeight: 'bold', stroke: '#000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(1000);
 
         // 5. GENERADORES
@@ -80,8 +82,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
     }
 
     crearGenerador(x, y, tipo, etiqueta) {
-        // ¡ESTE ERA EL ERROR! Ahora usamos Graphics para crear el fondo redondeado del texto
-        const textBg = this.add.graphics({ fillStyle: { color: 0x000000, alpha: 0.5 } }).setDepth(99);
+        const textBg = this.add.graphics({ fillStyle: { color: 0x000000, alpha: 0.6 } }).setDepth(99);
         textBg.fillRoundedRect(x - 60, y - 90, 120, 30, 15);
         
         this.add.text(x, y - 75, etiqueta, { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5).setDepth(100);
