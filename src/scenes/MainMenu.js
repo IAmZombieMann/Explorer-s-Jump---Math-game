@@ -7,44 +7,43 @@ export class MainMenu extends Phaser.Scene {
     }
 
     create() {
+        // Aseguramos que la escala sea de celular (Ej: 720x1280)
         const { width, height } = this.scale;
-        
-        // Instanciamos el audio directamente aquí para evitar errores de referencias perdidas
         this.audio = new AudioManager(this); 
 
         // 1. FONDO OSCURO
         this.add.rectangle(width/2, height/2, width, height, 0x1a1a2e).setDepth(0);
 
-        // 2. DECORACIÓN (Adaptada a Vertical)
+        // 2. DECORACIÓN (Piruletas adaptadas a la verticalidad)
         this.crearLollipop(width * 0.15, height * 0.85, 60, 0xef7c23); 
         this.crearLollipop(width * 0.85, height * 0.88, 50, 0xe0e226); 
         this.crearLollipop(width * 0.85, height * 0.15, 60, 0xe0e226); 
         this.crearLollipop(width * 0.15, height * 0.12, 45, 0xef7c23); 
 
-        // 3. HUD SUPERIOR (Alineado horizontalmente en la parte superior)
+        // 3. HUD SUPERIOR
         const hudY = height * 0.06;
         this.crearBarraHUD(width * 0.05, hudY, '💀', 0xe0e226, 0.4); 
         this.crearBarraHUD(width * 0.40, hudY, '⭐', 0xe0e226, 0.9); 
         this.crearBarraHUD(width * 0.75, hudY, '⚡', 0xef7c23, 0.2); 
 
-        // 4. PANEL VERTICAL (Más alto que ancho)
+        // 4. PANEL VERTICAL PRINCIPAL
         const panelX = width * 0.5;
-        const panelY = height * 0.52;
-        const panelW = width * 0.85; // 85% del ancho de la pantalla
-        const panelH = height * 0.60; // 60% del alto de la pantalla
+        const panelY = height * 0.55;
+        const panelW = width * 0.85; 
+        const panelH = height * 0.65; 
         
         const graphics = this.add.graphics({ fillStyle: { color: 0xa7e1f4, alpha: 1 } }).setDepth(200);
         graphics.fillRoundedRect(panelX - panelW/2, panelY - panelH/2, panelW, panelH, 40);
         graphics.lineStyle(6, 0xef7c23, 1);
         graphics.strokeRoundedRect(panelX - panelW/2, panelY - panelH/2, panelW, panelH, 40);
 
-        // Lazo de título (Encima del panel)
+        // Lazo de título
         this.crearLazoTitulo(panelX, panelY - panelH/2, panelW);
 
-        // 5. BOTONES APILADOS VERTICALMENTE
+        // 5. BOTONES (Medidas dinámicas para que no se amontonen)
         const buttonW = panelW * 0.85;
-        const buttonH = 100; // Alto fijo amigable para tocar
-        const spacing = 140; // Espacio vertical entre botones
+        const buttonH = panelH * 0.15; // Alto adaptativo
+        const spacing = panelH * 0.25; // Espacio dinámico entre botones
         
         // Botón 1 (Arriba)
         this.crearBotonMenu(panelX, panelY - spacing, buttonW, buttonH, 0xe0e226, 'Jugar de 2 en 2', () => {
@@ -54,19 +53,25 @@ export class MainMenu extends Phaser.Scene {
 
         // Botón 2 (Centro)
         this.crearBotonMenu(panelX, panelY, buttonW, buttonH, 0xef7c23, 'Unidades y Decenas', () => {
-            try { this.audio.hablar("¡Vamos a contar cristales!"); } catch(e){}
+            try { this.audio.hablar("¡Vamos a contar!"); } catch(e){}
             this.scene.start('ValorPosicionalGame');
         });
 
         // Botón 3 (Abajo)
         this.crearBotonMenu(panelX, panelY + spacing, buttonW, buttonH, 0xe04446, 'Créditos', () => {
-            console.log("Créditos presionados");
-            // Aquí puedes llamar a una futura escena de créditos
+            try { this.audio.hablar("Créditos"); } catch(e){}
+            console.log("Clic en créditos funcionó");
         });
     }
 
+    // --- LA SOLUCIÓN MÁGICA PARA LOS BOTONES ESTÁ AQUÍ ---
     crearBotonMenu(x, y, w, h, color, texto, accion) {
+        // 1. Creamos el contenedor
         const container = this.add.container(x, y).setDepth(300);
+        
+        // 2. LE DAMOS TAMAÑO AL CONTENEDOR Y LO HACEMOS INTERACTIVO (100% Seguro)
+        container.setSize(w, h);
+        container.setInteractive({ useHandCursor: true });
         
         const bgShadow = this.add.rectangle(0, 8, w, h, 0x000000, 0.4).setOrigin(0.5);
         
@@ -74,10 +79,6 @@ export class MainMenu extends Phaser.Scene {
         bg.fillRoundedRect(-w/2, -h/2, w, h, 25);
         bg.lineStyle(5, 0xffffff, 1);
         bg.strokeRoundedRect(-w/2, -h/2, w, h, 25);
-        
-        // INTERACTIVIDAD FORZADA: Área definida explícitamente para evitar fallos táctiles
-        bg.setInteractive(new Phaser.Geom.Rectangle(-w/2, -h/2, w, h), Phaser.Geom.Rectangle.Contains);
-        bg.setInteractive({ useHandCursor: true });
 
         const txt = this.add.text(0, 0, texto, { 
             fontSize: '34px', 
@@ -90,19 +91,18 @@ export class MainMenu extends Phaser.Scene {
         
         container.add([bgShadow, bg, txt]);
 
-        // LÓGICA DE CLIC MEJORADA
-        bg.on('pointerdown', () => { 
+        // 3. ESCUCHAMOS LOS CLICS DIRECTAMENTE EN EL CONTENEDOR
+        container.on('pointerdown', () => { 
             container.setScale(0.92); 
         });
         
-        // Si el dedo sale del botón, lo restauramos pero NO ejecutamos la acción
-        bg.on('pointerout', () => { 
+        container.on('pointerout', () => { 
             container.setScale(1); 
         });
         
-        bg.on('pointerup', () => { 
+        container.on('pointerup', () => { 
             container.setScale(1); 
-            // Pequeño retraso para que se note el efecto visual antes de cambiar de escena
+            // Disparamos la acción
             this.time.delayedCall(50, () => { accion(); });
         });
     }
@@ -134,7 +134,7 @@ export class MainMenu extends Phaser.Scene {
     }
 
     crearBarraHUD(x, y, iconChar, barColor, progresoPercent) {
-        const barW = 100; // Más compactas para que quepan en vertical
+        const barW = 100; 
         const barH = 25;
         const barX = x + (barW/2) + 30;
 

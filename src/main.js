@@ -7,15 +7,11 @@ import { ValorPosicionalGame } from './scenes/ValorPosicionalGame.js';
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
-    
-    // FORMATO VERTICAL (Mobile Portrait)
-    width: 720,   
-    height: 1280,
-    
+    width: 720,   // ANCHO DE CELULAR
+    height: 1280, // ALTO DE CELULAR
     scale: {
-        mode: Phaser.Scale.FIT, 
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        autoRound: true
+        mode: Phaser.Scale.FIT, // Escala inteligentemente
+        autoCenter: Phaser.Scale.CENTER_BOTH
     },
 
     backgroundColor: '#1a1a2e', 
