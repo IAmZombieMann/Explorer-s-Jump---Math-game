@@ -1,241 +1,241 @@
 import * as Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.esm.js';
 import { AudioManager } from '../utils/AudioManager.js';
 
-export class ValorPosicionalGame extends Phaser.Scene {
+export class ConteoGame extends Phaser.Scene {
     constructor() {
-        super('ValorPosicionalGame');
+        super('ConteoGame');
     }
 
     init() {
-        this.conteoActual = { centenas: 0, decenas: 0, unidades: 0 };
-        this.piezasVisuales = []; 
+        this.paso = 2; 
+        this.numeroActual = 0;
+        this.objetivo = 20;
+        this.estado = 'EXPLICACION'; 
+        this.botonesUI = []; 
     }
 
     create() {
         const { width, height } = this.scale;
         this.audio = new AudioManager(this);
 
-        // 1. NUEVO FONDO (Imagen escalada para cubrir toda la pantalla)
-        const bg = this.add.image(width / 2, height / 2, 'bg_valor_posicional').setDepth(0);
-        
-        // Calculamos la escala necesaria para que cubra el ancho y el alto sin deformarse
-        const scaleFactor = Math.max(width / bg.width, height / bg.height);
-        bg.setScale(scaleFactor);
-        
-        // Oscurecemos ligeramente el fondo para que las piezas y la interfaz resalten bien
-        bg.setTint(0xaaaaaa); 
+        // 1. NUEVO FONDO (TileSprite para efecto Parallax Infinito)
+        // Sustituimos 'sky' por la nueva imagen cargada en el Preloader.
+        // La centramos en la pantalla y la hacemos enorme a lo ancho para que el niño pueda avanzar.
+        this.bg = this.add.tileSprite(width / 2, height / 2, width * 10, height, 'bg_jungle')
+            .setScrollFactor(0.1) // Se mueve muy lento respecto a la cámara (Parallax)
+            .setAlpha(0.8);       // Un poco de transparencia para no saturar la vista
 
-        // 2. BOTÓN VOLVER
-        const btnVolver = this.add.container(80, 50).setDepth(1000);
+        // Ajustamos la escala de la imagen de fondo para que llene el alto del celular sin deformarse
+        const scaleBase = height / this.textures.get('bg_jungle').getSourceImage().height;
+        this.bg.tileScaleX = scaleBase;
+        this.bg.tileScaleY = scaleBase;
+        
+        // 2. BOTÓN SALIR
+        const btnVolver = this.add.container(80, 50).setDepth(1000).setScrollFactor(0);
+        btnVolver.setSize(110, 40);
+        btnVolver.setInteractive({ useHandCursor: true });
+        
         const bgVolver = this.add.graphics({ fillStyle: { color: 0xe74c3c } });
         bgVolver.fillRoundedRect(-55, -20, 110, 40, 20); 
-        bgVolver.setInteractive(new Phaser.Geom.Rectangle(-55, -20, 110, 40), Phaser.Geom.Rectangle.Contains);
-        bgVolver.setInteractive({ useHandCursor: true });
         
         const txtVolver = this.add.text(0, 0, '← SALIR', { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
         btnVolver.add([bgVolver, txtVolver]);
-        bgVolver.on('pointerdown', () => {
+        
+        btnVolver.on('pointerdown', () => {
             try { window.speechSynthesis.cancel(); } catch(e){}
             this.scene.start('MainMenu');
         });
 
-        // 3. ZONA DE DEPÓSITO
-        this.zonaX = width * 0.7;
-        this.zonaY = height * 0.55;
-        this.limitesCaja = {
-            xMin: this.zonaX - 140, xMax: this.zonaX + 140,
-            yMin: this.zonaY - 140, yMax: this.zonaY + 140
-        };
-
-        const baseMaqui = this.add.graphics().setDepth(1);
-        baseMaqui.fillStyle(0x000000, 0.4); // Fondo de la caja un poquito más oscuro para que resalte del nuevo fondo
-        baseMaqui.fillRoundedRect(this.limitesCaja.xMin, this.limitesCaja.yMin, 280, 280, 25);
-        baseMaqui.lineStyle(4, 0x4ecdc4, 1); 
-        baseMaqui.strokeRoundedRect(this.limitesCaja.xMin, this.limitesCaja.yMin, 280, 280, 25);
-        baseMaqui.lineStyle(2, 0xffffff, 0.2); 
-        baseMaqui.strokeRoundedRect(this.limitesCaja.xMin + 10, this.limitesCaja.yMin + 10, 260, 260, 15);
-
-        // 4. TEXTOS DOBLES
-        this.numeroObjetivo = Phaser.Math.Between(10, 150);
-        const tituloY = 120;
+        // 3. FÍSICAS Y PERSONAJE
+        this.plataformas = this.physics.add.staticGroup();
         
-        const bgTitulo = this.add.graphics({ fillStyle: { color: 0x2c3e50, alpha: 1 } }).setDepth(990);
-        bgTitulo.fillRoundedRect((width/2) - 160, tituloY - 40, 320, 80, 20);
+        // Ajuste móvil: Subimos al personaje
+        this.player = this.physics.add.sprite(100, height - 380, 'dude'); 
+        this.player.setBounce(0.1);
+        this.player.setCollideWorldBounds(false); 
+        this.physics.add.collider(this.player, this.plataformas);
+
+        // 4. UI PRINCIPAL 
+        const tituloY = 90;
+        const bgTitulo = this.add.graphics({ fillStyle: { color: 0x2c3e50, alpha: 1 } }).setScrollFactor(0).setDepth(990);
+        bgTitulo.fillRoundedRect((width/2) - 220, tituloY - 45, 440, 90, 20);
         bgTitulo.lineStyle(4, 0xf1c40f, 1); 
-        bgTitulo.strokeRoundedRect((width/2) - 160, tituloY - 40, 320, 80, 20);
+        bgTitulo.strokeRoundedRect((width/2) - 220, tituloY - 45, 440, 90, 20);
 
-        this.uiObjetivo = this.add.text(width / 2, tituloY - 15, `OBJETIVO: ${this.numeroObjetivo}`, {
-            fontSize: '34px', fontFamily: 'Arial Black', fill: '#f1c40f', stroke: '#000', strokeThickness: 5
-        }).setOrigin(0.5).setDepth(1000);
+        this.uiTexto = this.add.text(width / 2, tituloY, '¡Mira cómo cuento\nde 2 en 2!', {
+            fontSize: '28px', fontFamily: 'Arial Black', fill: '#f1c40f', stroke: '#000', strokeThickness: 1, align: 'center'
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
 
-        this.uiFeedback = this.add.text(width / 2, tituloY + 20, '¡Arrastra las piezas!', {
-            fontSize: '18px', fontFamily: 'Arial', fill: '#4ecdc4', fontWeight: 'bold', stroke: '#000', strokeThickness: 3
-        }).setOrigin(0.5).setDepth(1000);
-
-        // 5. GENERADORES
-        this.crearGenerador(120, height * 0.32, 'centena', 'CENTENAS');
-        this.crearGenerador(120, height * 0.55, 'decena', 'DECENAS');
-        this.crearGenerador(120, height * 0.78, 'unidad', 'UNIDADES');
-
-        this.setupDragEvents();
-        this.createCheckButton(this.zonaX, this.limitesCaja.yMax + 35);
+        this.setupControlesPractica();
+        this.iniciarExplicacion();
     }
 
-    crearGenerador(x, y, tipo, etiqueta) {
-        const textBg = this.add.graphics({ fillStyle: { color: 0x000000, alpha: 0.6 } }).setDepth(99);
-        textBg.fillRoundedRect(x - 60, y - 90, 120, 30, 15);
-        
-        this.add.text(x, y - 75, etiqueta, { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5).setDepth(100);
-        
-        const pieza = this.add.image(x, y, tipo);
-        pieza.setScale(0.9); 
-        
-        pieza.setInteractive(new Phaser.Geom.Rectangle(0, 0, pieza.width, pieza.height), Phaser.Geom.Rectangle.Contains);
-        this.input.setDraggable(pieza);
-
-        pieza.setData('tipo', tipo);
-        pieza.setData('esGenerador', true); 
-        pieza.setData('startX', x);
-        pieza.setData('startY', y);
-        pieza.setDepth(500);
+    iniciarExplicacion() {
+        this.estado = 'EXPLICACION';
+        this.mostrarSiguienteSalto();
     }
 
-    setupDragEvents() {
-        this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
-            gameObject.x = dragX;
-            gameObject.y = dragY;
-            gameObject.setDepth(2000); 
-        });
-
-        this.input.on('dragend', (pointer, gameObject) => {
-            const estaEnCaja = (gameObject.x > this.limitesCaja.xMin && gameObject.x < this.limitesCaja.xMax &&
-                               gameObject.y > this.limitesCaja.yMin && gameObject.y < this.limitesCaja.yMax);
-
-            if (gameObject.getData('esGenerador')) {
-                if (estaEnCaja) {
-                    this.crearCopiaEnCaja(gameObject.getData('tipo'), gameObject.x, gameObject.y);
-                }
-                gameObject.x = gameObject.getData('startX');
-                gameObject.y = gameObject.getData('startY');
-                gameObject.setDepth(500);
-            } else {
-                if (!estaEnCaja) {
-                    this.eliminarPieza(gameObject);
-                } else {
-                    gameObject.setDepth(100);
-                }
-            }
-        });
-    }
-
-    crearCopiaEnCaja(tipo, x, y) {
-        let valorAgregado = 0;
-        if (tipo === 'centena') {
-            this.conteoActual.centenas++;
-            valorAgregado = this.conteoActual.centenas * 100;
-        } else if (tipo === 'decena') {
-            this.conteoActual.decenas++;
-            valorAgregado = this.conteoActual.decenas * 10;
-        } else if (tipo === 'unidad') {
-            this.conteoActual.unidades++;
-            valorAgregado = this.conteoActual.unidades;
+    mostrarSiguienteSalto() {
+        if (this.numeroActual >= 10) {
+            this.time.delayedCall(1000, () => {
+                try { this.audio.hablar('¡Ahora te toca a ti! ¿Qué número sigue?'); } catch(e){}
+                this.uiTexto.setText('¡Tu turno!\n¿Qué número sigue?');
+                this.uiTexto.setColor('#4ecdc4');
+                this.iniciarPractica();
+            });
+            return;
         }
 
-        const total = (this.conteoActual.centenas * 100) + (this.conteoActual.decenas * 10) + this.conteoActual.unidades;
-
-        try { this.audio.hablar(`${valorAgregado}. Llevas ${total}`); } catch(e){}
+        this.numeroActual += this.paso;
+        const nuevaX = this.numeroActual === 2 ? this.player.x + 100 : this.player.x + 240; 
+        const nuevaY = this.scale.height - 320; 
         
-        this.uiFeedback.setText(`Suma actual: ${total}`);
-        this.uiFeedback.setColor('#4ecdc4');
+        this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
 
-        const copia = this.add.image(x, y, tipo).setScale(0.8);
-        copia.setInteractive(new Phaser.Geom.Rectangle(0, 0, copia.width, copia.height), Phaser.Geom.Rectangle.Contains);
-        this.input.setDraggable(copia);
-        copia.setDepth(100);
-        copia.setData('tipo', tipo);
-        copia.setData('esGenerador', false); 
-        this.piezasVisuales.push(copia);
-    }
-
-    eliminarPieza(pieza) {
-        const tipo = pieza.getData('tipo');
-        if (tipo === 'centena') this.conteoActual.centenas--;
-        else if (tipo === 'decena') this.conteoActual.decenas--;
-        else if (tipo === 'unidad') this.conteoActual.unidades--;
-        
-        const total = (this.conteoActual.centenas * 100) + (this.conteoActual.decenas * 10) + this.conteoActual.unidades;
-        
-        try { this.audio.hablar(`Llevas ${total}`); } catch(e){}
-        
-        this.uiFeedback.setText(`Suma actual: ${total}`);
-
+        this.player.setVelocityY(-450);
         this.tweens.add({
-            targets: pieza, alpha: 0, scale: 0, duration: 200,
+            targets: this.player,
+            x: nuevaX,
+            duration: 600,
+            onStart: () => {
+                try { this.audio.hablar(this.numeroActual.toString()); } catch(e){}
+            },
             onComplete: () => {
-                this.piezasVisuales = this.piezasVisuales.filter(p => p !== pieza);
-                pieza.destroy();
+                this.time.delayedCall(800, () => this.mostrarSiguienteSalto());
             }
         });
     }
 
-    createCheckButton(x, y) {
-        const container = this.add.container(x, y).setDepth(1000);
-        
-        const bg = this.add.graphics({ fillStyle: { color: 0x2ecc71 } });
-        bg.fillRoundedRect(-140, -25, 280, 50, 15); 
-        bg.lineStyle(3, 0xffffff, 0.8);
-        bg.strokeRoundedRect(-140, -25, 280, 50, 15);
-
-        bg.setInteractive(new Phaser.Geom.Rectangle(-140, -25, 280, 50), Phaser.Geom.Rectangle.Contains);
-        bg.setInteractive({ useHandCursor: true });
-
-        const txt = this.add.text(0, 0, '¡COMPROBAR!', { 
-            fontSize: '22px', fontWeight: 'bold', fill: '#fff', fontFamily: 'Arial Black', stroke: '#000', strokeThickness: 3
+    crearPlataforma(x, y, numero) {
+        const plat = this.plataformas.create(x, y, 'plataforma').setScale(0.6).refreshBody();
+        this.add.text(x, y - 45, numero.toString(), {
+            fontSize: '34px', fontFamily: 'Arial Black', fill: '#ffff00', stroke: '#000', strokeThickness: 2
         }).setOrigin(0.5);
+        return plat;
+    }
+
+    setupControlesPractica() {
+        const { width, height } = this.scale;
         
-        container.add([bg, txt]);
+        const yPos = height - 160; 
+        
+        this.crearBotonOpcion(width/2 - 200, yPos);
+        this.crearBotonOpcion(width/2, yPos);
+        this.crearBotonOpcion(width/2 + 200, yPos);
+    }
 
-        bg.on('pointerdown', () => { container.setScale(0.95); });
-        bg.on('pointerout', () => { container.setScale(1); });
+    crearBotonOpcion(x, y) {
+        const w = 160;
+        const h = 100;
+        
+        const container = this.add.container(x, y).setDepth(1000).setScrollFactor(0).setVisible(false);
+        container.setSize(w, h);
+        container.setInteractive({ useHandCursor: true });
 
-        bg.on('pointerup', () => {
+        const bgShadow = this.add.rectangle(0, 8, w, h, 0x000000, 0.4).setOrigin(0.5);
+        
+        const bg = this.add.graphics({ fillStyle: { color: 0x3498db } });
+        bg.fillRoundedRect(-w/2, -h/2, w, h, 20);
+        bg.lineStyle(4, 0xffffff, 1);
+        bg.strokeRoundedRect(-w/2, -h/2, w, h, 20);
+
+        const txt = this.add.text(0, 0, '', { 
+            fontSize: '48px', fill: '#fff', fontWeight: 'bold', fontFamily: 'Arial Black', stroke: '#000', strokeThickness: 2
+        }).setOrigin(0.5);
+
+        container.add([bgShadow, bg, txt]);
+
+        container.on('pointerdown', () => { container.setScale(0.92); });
+        container.on('pointerout', () => { container.setScale(1); });
+        container.on('pointerup', () => { 
             container.setScale(1);
+            this.time.delayedCall(50, () => this.verificarSalto(container.valorAsignado));
+        });
 
-            const total = (this.conteoActual.centenas * 100) + (this.conteoActual.decenas * 10) + this.conteoActual.unidades;
-            
-            if (total === this.numeroObjetivo) {
-                try { this.audio.hablar("¡Excelente! Es correcto."); } catch(e){}
-                this.uiFeedback.setText("¡CORRECTO! 🎉");
-                this.uiFeedback.setColor('#2ecc71');
-                
-                this.cameras.main.flash(500, 46, 204, 113);
-                this.time.delayedCall(1500, () => this.siguienteReto());
-            } else {
-                try { this.audio.hablar(`Tienes ${total}. Intenta de nuevo.`); } catch(e){}
-                
-                this.uiFeedback.setText(`¡Llevas ${total}! Faltan piezas.`);
-                this.uiFeedback.setColor('#e74c3c');
-                
-                this.cameras.main.shake(200, 0.01);
-                
-                this.time.delayedCall(2000, () => {
-                    this.uiFeedback.setColor('#4ecdc4');
-                    this.uiFeedback.setText(`Suma actual: ${total}`);
-                });
-            }
+        this.botonesUI.push({ container, txt });
+    }
+
+    iniciarPractica() {
+        this.estado = 'PRACTICA';
+        
+        const respuestaCorrecta = this.numeroActual + this.paso;
+        const opciones = [respuestaCorrecta, respuestaCorrecta - 1, respuestaCorrecta + 1]; 
+        Phaser.Utils.Array.Shuffle(opciones); 
+        
+        this.botonesUI.forEach((item, index) => {
+            const numeroMostrado = opciones[index];
+            item.txt.setText(numeroMostrado.toString());
+            item.container.valorAsignado = numeroMostrado; 
+            item.container.setVisible(true);
         });
     }
 
-    siguienteReto() {
-        this.piezasVisuales.forEach(pieza => pieza.destroy());
-        this.piezasVisuales = [];
-        this.conteoActual = { centenas: 0, decenas: 0, unidades: 0 };
-        this.numeroObjetivo = Phaser.Math.Between(10, 150);
+    verificarSalto(valorElegido) {
+        if (this.estado !== 'PRACTICA') return;
 
-        this.uiObjetivo.setText(`OBJETIVO: ${this.numeroObjetivo}`);
-        this.uiFeedback.setText('¡Arrastra las piezas!');
-        this.uiFeedback.setColor('#4ecdc4');
+        const respuestaCorrecta = this.numeroActual + this.paso;
 
-        try { this.audio.hablar(`Nuevo reto. Construye el número ${this.numeroObjetivo}`); } catch(e){}
+        if (valorElegido === respuestaCorrecta) {
+            this.estado = 'SALTANDO';
+            
+            try { this.audio.hablar("¡Muy bien! " + respuestaCorrecta); } catch(e){}
+            
+            this.botonesUI.forEach(item => item.container.setVisible(false));
+            
+            this.numeroActual = respuestaCorrecta;
+            
+            const nuevaX = this.player.x + 240;
+            const nuevaY = this.scale.height - 320; 
+            
+            this.crearPlataforma(nuevaX, nuevaY, this.numeroActual);
+
+            this.player.setVelocityY(-450);
+            this.tweens.add({
+                targets: this.player,
+                x: nuevaX,
+                duration: 600,
+                onComplete: () => {
+                    if (this.numeroActual >= this.objetivo) {
+                        this.uiTexto.setText('¡LO LOGRASTE! 🎉');
+                        this.uiTexto.setColor('#2ecc71');
+                        try { this.audio.hablar("¡Excelente! Has llegado a la meta."); } catch(e){}
+                        
+                        this.cameras.main.flash(500, 46, 204, 113); 
+                        this.time.delayedCall(2500, () => {
+                            try { window.speechSynthesis.cancel(); } catch(e){}
+                            this.scene.start('MainMenu');
+                        });
+                    } else {
+                        this.time.delayedCall(500, () => {
+                            try { this.audio.hablar('¿Y ahora?'); } catch(e){}
+                            this.iniciarPractica(); 
+                        });
+                    }
+                }
+            });
+
+        } else {
+            try { this.audio.hablar("¡Casi! Sigue contando de " + this.paso + " en " + this.paso); } catch(e){}
+            this.uiTexto.setText('¡Intenta de nuevo!');
+            this.uiTexto.setColor('#e74c3c');
+            this.cameras.main.shake(200, 0.01);
+            
+            this.time.delayedCall(1500, () => {
+               if (this.estado === 'PRACTICA') {
+                   this.uiTexto.setText('¡Tu turno!\n¿Qué número sigue?');
+                   this.uiTexto.setColor('#4ecdc4');
+               }
+            });
+        }
+    }
+
+    update() {
+        const targetX = this.player.x - 250;
+        this.cameras.main.scrollX = Phaser.Math.Linear(this.cameras.main.scrollX, targetX, 0.05);
+
+        if (this.player.y > this.scale.height) {
+            this.player.setPosition(this.player.x - 180, this.scale.height - 450);
+            this.player.setVelocity(0);
+        }
     }
 }
