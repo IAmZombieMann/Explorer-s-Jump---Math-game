@@ -21,7 +21,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
         
         // 2. BOTÓN VOLVER (Esquina superior izquierda)
         const btnVolver = this.add.container(70, 40).setDepth(1000);
-        const bgVolver = this.add.rectangle(0, 0, 110, 40, 0xe74c3c).setInteractive();
+        const bgVolver = this.add.rectangle(0, 0, 110, 40, 0xe74c3c).setInteractive({ useHandCursor: true });
         const txtVolver = this.add.text(0, 0, '← VOLVER', { fontSize: '16px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
         btnVolver.add([bgVolver, txtVolver]);
         bgVolver.on('pointerdown', () => this.scene.start('MainMenu'));
@@ -54,8 +54,9 @@ export class ValorPosicionalGame extends Phaser.Scene {
         // 6. EVENTOS DE ARRASTRE (DRAG)
         this.setupDragEvents();
 
-        // 7. BOTÓN COMPROBAR (Debajo de la caja)
-        this.createCheckButton(this.zonaX, height - 60);
+        // 7. BOTÓN COMPROBAR 
+        // ¡CORRECCIÓN!: Lo ponemos justo debajo de la caja usando this.limitesCaja.yMax + 50 pixeles
+        this.createCheckButton(this.zonaX, this.limitesCaja.yMax + 50);
     }
 
     crearGenerador(x, y, tipo, etiqueta) {
@@ -72,7 +73,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
 
         // Metadatos
         pieza.setData('tipo', tipo);
-        pieza.setData('esGenerador', true); // Marca para saber que es la fuente original
+        pieza.setData('esGenerador', true); 
         pieza.setData('startX', x);
         pieza.setData('startY', y);
         pieza.setDepth(500);
@@ -83,7 +84,7 @@ export class ValorPosicionalGame extends Phaser.Scene {
         this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
             gameObject.x = dragX;
             gameObject.y = dragY;
-            gameObject.setDepth(2000); // Lo ponemos por encima de todo
+            gameObject.setDepth(2000); 
         });
 
         // Al soltar el objeto
@@ -92,21 +93,16 @@ export class ValorPosicionalGame extends Phaser.Scene {
                                gameObject.y > this.limitesCaja.yMin && gameObject.y < this.limitesCaja.yMax);
 
             if (gameObject.getData('esGenerador')) {
-                // LÓGICA DEL GENERADOR
                 if (estaEnCaja) {
                     this.crearCopiaEnCaja(gameObject.getData('tipo'), gameObject.x, gameObject.y);
                 }
-                // El generador siempre regresa instantáneamente a su origen
                 gameObject.x = gameObject.getData('startX');
                 gameObject.y = gameObject.getData('startY');
                 gameObject.setDepth(500);
             } else {
-                // LÓGICA DE LAS COPIAS (Las que ya están en la caja)
                 if (!estaEnCaja) {
-                    // Si el niño la saca de la caja, la eliminamos
                     this.eliminarPieza(gameObject);
                 } else {
-                    // Si la mueve dentro de la caja, simplemente se queda en su nuevo lugar
                     gameObject.setDepth(100);
                 }
             }
@@ -114,44 +110,36 @@ export class ValorPosicionalGame extends Phaser.Scene {
     }
 
     crearCopiaEnCaja(tipo, x, y) {
-        // 1. Aumentamos el contador explícitamente según el tipo
         if (tipo === 'centena') this.conteoActual.centenas++;
         else if (tipo === 'decena') this.conteoActual.decenas++;
         else if (tipo === 'unidad') this.conteoActual.unidades++;
 
-        this.audio.hablar(tipo); // Sonido de feedback
+        this.audio.hablar(tipo); 
 
-        // 2. Creamos la nueva imagen (Copia)
         const copia = this.add.image(x, y, tipo).setScale(0.6);
         
-        // 3. La hacemos interactiva y arrastrable
         copia.setInteractive(new Phaser.Geom.Rectangle(0, 0, copia.width, copia.height), Phaser.Geom.Rectangle.Contains);
         this.input.setDraggable(copia);
         
-        // 4. Configuramos sus metadatos
         copia.setDepth(100);
         copia.setData('tipo', tipo);
-        copia.setData('esGenerador', false); // IMPORTANTE: Esto le dice al juego que es movible/eliminable
+        copia.setData('esGenerador', false); 
         
-        // 5. La guardamos en nuestra lista
         this.piezasVisuales.push(copia);
     }
 
     eliminarPieza(pieza) {
-        // Restamos del contador
         const tipo = pieza.getData('tipo');
         if (tipo === 'centena') this.conteoActual.centenas--;
         else if (tipo === 'decena') this.conteoActual.decenas--;
         else if (tipo === 'unidad') this.conteoActual.unidades--;
         
-        // Animación de desaparición
         this.tweens.add({
             targets: pieza,
             alpha: 0,
             scale: 0,
             duration: 200,
             onComplete: () => {
-                // La quitamos de la lista y destruimos el objeto
                 this.piezasVisuales = this.piezasVisuales.filter(p => p !== pieza);
                 pieza.destroy();
             }
@@ -160,19 +148,29 @@ export class ValorPosicionalGame extends Phaser.Scene {
 
     createCheckButton(x, y) {
         const container = this.add.container(x, y).setDepth(1000);
-        const bg = this.add.rectangle(0, 0, 200, 50, 0x2ecc71).setInteractive();
-        const txt = this.add.text(0, 0, 'COMPROBAR', { fontSize: '20px', fontWeight: 'bold', fill: '#fff' }).setOrigin(0.5);
+        
+        // Lo hice un poquito más bonito con bordes redondeados
+        const bg = this.add.graphics({ fillStyle: { color: 0x2ecc71 } });
+        bg.fillRoundedRect(-110, -30, 220, 60, 15);
+        bg.setInteractive(new Phaser.Geom.Rectangle(-110, -30, 220, 60), Phaser.Geom.Rectangle.Contains);
+        bg.setInteractive({ useHandCursor: true });
+
+        const txt = this.add.text(0, 0, 'COMPROBAR', { fontSize: '22px', fontWeight: 'bold', fill: '#fff', fontFamily: 'Arial Black' }).setOrigin(0.5);
         container.add([bg, txt]);
 
-        bg.on('pointerdown', () => {
-            // Calculamos el valor total construido por el niño
+        // Efecto de botón al pulsar
+        bg.on('pointerdown', () => { container.setScale(0.95); });
+        bg.on('pointerout', () => { container.setScale(1); });
+
+        bg.on('pointerup', () => {
+            container.setScale(1);
+
             const total = (this.conteoActual.centenas * 100) + (this.conteoActual.decenas * 10) + this.conteoActual.unidades;
             
             if (total === this.numeroObjetivo) {
                 this.audio.hablar("¡Excelente! Es correcto.");
                 this.uiTexto.setText("¡MUY BIEN!");
                 
-                // Efecto de celebración rápido antes de reiniciar
                 this.cameras.main.flash(500, 46, 204, 113);
                 this.time.delayedCall(1500, () => this.scene.restart());
             } else {
