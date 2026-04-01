@@ -52,17 +52,29 @@ export class MainMenu extends Phaser.Scene {
         
         this.crearBotonMenu(panelX, panelY - spacing, buttonW, buttonH, 0xe0e226, 'Jugar de 2 en 2', () => {
             try { this.audio.hablar("¡Prepárate para saltar!"); } catch(e){}
-            this.scene.start('ConteoGame');
+            // El retraso ahora es solo para el cambio de escena, NO para la acción entera
+            this.time.delayedCall(100, () => this.scene.start('ConteoGame'));
         });
 
         this.crearBotonMenu(panelX, panelY, buttonW, buttonH, 0xef7c23, 'Unidades y Decenas', () => {
             try { this.audio.hablar("¡Vamos a contar!"); } catch(e){}
-            this.scene.start('ValorPosicionalGame');
+            this.time.delayedCall(100, () => this.scene.start('ValorPosicionalGame'));
         });
 
-        this.crearBotonMenu(panelX, panelY + spacing, buttonW, buttonH, 0xe04446, 'Créditos', () => {
-            try { this.audio.hablar("Créditos"); } catch(e){}
-            console.log("Clic en créditos funcionó");
+        // NUEVO BOTÓN: ACTIVAR AUDIO (Reemplaza a Créditos)
+        const btnAudio = this.crearBotonMenu(panelX, panelY + spacing, buttonW, buttonH, 0x9b59b6, '🔊 ACTIVAR AUDIO', () => {
+            try { 
+                this.audio.hablar("¡Audio activado y listo para jugar!"); 
+                
+                // Cambiamos el color a VERDE para confirmar visualmente
+                btnAudio.bg.clear();
+                btnAudio.bg.fillStyle(0x2ecc71); 
+                btnAudio.bg.fillRoundedRect(-buttonW/2, -buttonH/2, buttonW, buttonH, 25);
+                btnAudio.bg.lineStyle(5, 0xffffff, 1);
+                btnAudio.bg.strokeRoundedRect(-buttonW/2, -buttonH/2, buttonW, buttonH, 25);
+                
+                btnAudio.txt.setText('✅ AUDIO LISTO');
+            } catch(e){}
         });
     }
 
@@ -79,7 +91,7 @@ export class MainMenu extends Phaser.Scene {
         bg.strokeRoundedRect(-w/2, -h/2, w, h, 25);
 
         const txt = this.add.text(0, 0, texto, { 
-            fontSize: '34px', 
+            fontSize: '32px', 
             fill: '#fff', 
             fontWeight: 'bold', 
             fontFamily: 'Arial Black',
@@ -91,10 +103,16 @@ export class MainMenu extends Phaser.Scene {
 
         container.on('pointerdown', () => { container.setScale(0.92); });
         container.on('pointerout', () => { container.setScale(1); });
+        
+        // ¡EL SECRETO DE SAFARI DESCUBIERTO!
+        // Ejecutamos "accion()" INMEDIATAMENTE al soltar el dedo, sin retrasos de tiempo.
         container.on('pointerup', () => { 
             container.setScale(1); 
-            this.time.delayedCall(50, () => { accion(); });
+            accion(); 
         });
+
+        // Retornamos las partes para poder cambiarles el color y texto desde afuera
+        return { container, bg, txt }; 
     }
 
     crearLollipop(x, y, radio, color) {
