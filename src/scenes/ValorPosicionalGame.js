@@ -149,13 +149,22 @@ export class ValorPosicionalGame extends Phaser.Scene {
     createCheckButton(x, y) {
         const container = this.add.container(x, y).setDepth(1000);
         
-        // Lo hice un poquito más bonito con bordes redondeados
+        // Ajustamos el ancho para que coincida mejor con la caja (280px de ancho)
         const bg = this.add.graphics({ fillStyle: { color: 0x2ecc71 } });
-        bg.fillRoundedRect(-110, -30, 220, 60, 15);
-        bg.setInteractive(new Phaser.Geom.Rectangle(-110, -30, 220, 60), Phaser.Geom.Rectangle.Contains);
+        // Dibujamos el botón: centrado en X (-140), centrado en Y (-25), ancho 280, alto 50
+        bg.fillRoundedRect(-140, -25, 280, 50, 10); 
+        bg.setInteractive(new Phaser.Geom.Rectangle(-140, -25, 280, 50), Phaser.Geom.Rectangle.Contains);
         bg.setInteractive({ useHandCursor: true });
 
-        const txt = this.add.text(0, 0, 'COMPROBAR', { fontSize: '22px', fontWeight: 'bold', fill: '#fff', fontFamily: 'Arial Black' }).setOrigin(0.5);
+        const txt = this.add.text(0, 0, 'COMPROBAR', { 
+            fontSize: '20px', 
+            fontWeight: 'bold', 
+            fill: '#fff', 
+            fontFamily: 'Arial Black',
+            stroke: '#000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+        
         container.add([bg, txt]);
 
         // Efecto de botón al pulsar
